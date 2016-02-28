@@ -117,12 +117,10 @@ void server::process_connections(bool async)
 
 void server::connection_thread()
 {
-    ulong status;
+    int status;
     
-    //TODO
-    //Перенести и сзапилить объект клиента
-    struct sockaddr m_socket;
-    socklen_t m_socket_size;
+    struct sockaddr client_socket;
+    socklen_t client_socket_size;
     int client_socketfd;
     
     while("SURPRISE MOTHERFUCKER!")
@@ -138,32 +136,45 @@ void server::connection_thread()
         }
         
         client_socketfd = accept( socketfd,
-                               &m_socket,
-                               &m_socket_size);
+                                  &client_socket,
+                                  &client_socket_size);
         
-        /*
-        pclient = create_client(pserver);
+        
+        client* pclient = new client();
         
         if(pclient == 0x0)
         {
-            printf("Memory error\r\n");
+            cout << "Memory error" << endl;
             
-            break;
+            continue;
         }
-       
-        //Прием входящего соединения от клиента
-        pclient->m_socketfd = accept( pserver->m_socketfd,
-                                      &pclient->m_socket,
-                                      &pclient->m_socket_size);
-
-        dbgprintf("New client connected %d\r\n", pclient->m_socketfd);
-
-        setsockopt(pclient->m_socketfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes));
         
+        status = pclient->connect( &client_socket,
+                                    client_socket_size,
+                                    client_socketfd);
+        
+        if(status != 0x0)
+        {
+            cout << "Connection error" << endl;
+            
+            delete pclient;
+            
+            continue;
+        }
+        /*
         if(fork() == 0)
-        {            
+        {   
+            //Обработка запросов
+            pclient->process_request();
+          
+            delete pclient();
+         
             exit(0);
-        }*/
+        }
+        */
+        pclient->process_request();
+        
+        delete pclient;
     }
      
     return;

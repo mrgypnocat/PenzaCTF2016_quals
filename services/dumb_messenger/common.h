@@ -24,6 +24,6 @@ using namespace std;
 #include <thread>
 
 #include "server.h"
-
+#include "client.h"
 #endif	/* COMMON_H */
 
