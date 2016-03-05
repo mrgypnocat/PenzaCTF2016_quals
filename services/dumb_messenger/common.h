@@ -14,8 +14,10 @@ using namespace std;
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <cstdlib>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
@@ -23,7 +25,9 @@ using namespace std;
 #include <wait.h>
 #include <thread>
 
+#include "md5.h"
 #include "server.h"
+#include "user.h"
 #include "client.h"
 #endif	/* COMMON_H */
 

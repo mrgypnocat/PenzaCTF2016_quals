@@ -6,6 +6,7 @@
  */
 
 #include "common.h"
+#include "user.h"
 
 client::client() 
 {
@@ -15,6 +16,7 @@ client::client()
     this->connected      = false;
     this->in_buffer_size = 0x1000;
     this->in_buffer      = 0x0;
+    this->autorized_user = NULL;
 }
 
 client::client(const client& orig) 
@@ -45,6 +47,16 @@ client::connect(sockaddr* client_socket,
     int yes = 1;
     setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes));
     
+    struct timeval timeout;      
+    timeout.tv_sec = 2;
+    timeout.tv_usec = 0;
+    
+    setsockopt ( socketfd, 
+                 SOL_SOCKET, 
+                 SO_RCVTIMEO, 
+                 (char *)&timeout,
+                 sizeof(timeout));
+    
     in_buffer = (char*)malloc(in_buffer_size);
     
     if(!in_buffer)
@@ -56,10 +68,12 @@ client::connect(sockaddr* client_socket,
 }
 
 ulong
-client::process_request()
+client::working_thread()
 {
     ulong  request_size;
     string request;
+    
+    string answer;
     
     request_size = 0;
     request = "";
@@ -70,9 +84,116 @@ client::process_request()
         //TODO
         //Обработка запроса
         cout << request << endl;
-    }while(request != "");
+        
+        answer = process_request(request);
+        
+        cout << answer << endl;
+        
+        write_str(answer);
+    }while(request != "quit" && request != "");
         
     return request_size;
+}
+
+string 
+client::process_user_request(string request)
+{
+    string user_request = "";
+    string user_name    = "";
+    string user_pass    = "";
+    string answer       = "";
+    
+    user* cur_user = NULL;
+    
+    stringstream ss(request);
+    
+    ss >> user_request;
+
+    if(user_request == "add")
+    {
+        ss >> user_name;
+        ss >> user_pass;
+        
+        if(user_name == "" || user_pass == "")
+            return "Invalid parameter";
+        
+        cur_user = new user(user_name,user_pass);
+        
+        if(cur_user->save() == -1)
+        {
+            delete cur_user;
+            cur_user = NULL;
+          
+            answer = "Add user error";
+        }
+        else
+        {
+            answer = "Success";
+        }
+        
+        if(autorized_user)
+            delete autorized_user;
+        
+        autorized_user = cur_user;
+        
+        return answer;
+    }
+    
+    if(user_request == "get")
+    {
+        return answer;
+    }
+    
+    if(user_request == "remove")
+    {
+        ss >> user_name;
+        ss >> user_pass;
+        
+        return answer;
+    }
+    
+    return answer;
+}
+
+string
+client::process_message_request(string request)
+{
+    string answer = "";
+    
+    return answer;
+}
+
+string
+client::process_request(string request)
+{
+    string answer = "";
+    string request_word = "";
+    
+    stringstream ss(request);
+    
+    while(ss >> request_word)
+    {
+        if(request_word == "user")
+        {
+            string user_request = request.substr(5,request.size());
+            answer = process_user_request(user_request);
+            break;
+        }
+        
+        if(request_word == "message")
+        {
+            //if(user == null)
+            //{
+                //answer == "autorize first";
+                //break;
+            //}
+            string message_request = request.substr(8,request.size());
+            answer = process_message_request(ss.str());
+            break;
+        }
+    }
+    
+    return answer;
 }
 
 string
@@ -101,7 +222,8 @@ client::write_str(string buffer)
 {
     int writed;
     
-    writed = write(socketfd,buffer.c_str(),buffer.size());
+    //writed = write(socketfd,buffer.c_str(),buffer.size());
+    writed = send(socketfd,buffer.c_str(),buffer.size(),MSG_NOSIGNAL);
     
     return writed;
 }
@@ -118,5 +240,8 @@ client::~client()
         
         shutdown(socketfd,SHUT_RDWR);
         close(socketfd);
+        
+        if(autorized_user)
+            delete autorized_user;
     }
 }

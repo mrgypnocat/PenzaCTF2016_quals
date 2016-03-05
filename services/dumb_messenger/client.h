@@ -18,7 +18,7 @@ public:
     ulong connect(sockaddr* client_socket,
                   socklen_t client_socket_size,
                   int       client_socketfd);
-    ulong process_request();
+    ulong working_thread();
 private:
     
     string read_str();
@@ -31,6 +31,17 @@ private:
     sockaddr*   socket;
     socklen_t   socket_size;
     int         socketfd;
+    
+    user* autorized_user; //--> list<message*> messages;
+    
+    string process_request(string request);
+    string process_user_request(string request);
+    string process_message_request(string request);
+    //user* add_user(string user_name);
+    //давай я здесь насру - мухи слетяться и мы их всех убьем
+    //ulong remove_user(user* user);
+    //list<user*> get_user_list();
+    
 };
 
 #endif	/* CLIENT_H */

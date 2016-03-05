@@ -34,9 +34,11 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/md5.o \
 	${OBJECTDIR}/server.o \
 	${OBJECTDIR}/main.o \
-	${OBJECTDIR}/client.o
+	${OBJECTDIR}/client.o \
+	${OBJECTDIR}/user.o
 
 
 # C Compiler Flags
@@ -63,6 +65,11 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/dumb_messenger: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/dumb_messenger ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
+${OBJECTDIR}/md5.o: md5.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/md5.o md5.cpp
+
 ${OBJECTDIR}/server.o: server.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
@@ -77,6 +84,11 @@ ${OBJECTDIR}/client.o: client.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/client.o client.cpp
+
+${OBJECTDIR}/user.o: user.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/user.o user.cpp
 
 # Subprojects
 .build-subprojects:

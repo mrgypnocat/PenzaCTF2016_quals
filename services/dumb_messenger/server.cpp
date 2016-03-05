@@ -16,7 +16,8 @@ server::server(string address, string port)
     this->started       = false;
     
     this->host_info_list = 0;
-    this->max_clients_amount = 5;
+    //я когда молодой был - 20 раз мог отжаться
+    this->max_clients_amount = 20;
 }
 
 server::server(const server& orig) 
@@ -149,6 +150,7 @@ void server::connection_thread()
             continue;
         }
         
+        //Братишка - я тебе покушать принес
         status = pclient->connect( &client_socket,
                                     client_socket_size,
                                     client_socketfd);
@@ -164,15 +166,15 @@ void server::connection_thread()
         /*
         if(fork() == 0)
         {   
-            //Обработка запросов
-            pclient->process_request();
+            
+            pclient->working_thread();
           
+            //давай я вот здесь насру - мухи прилетят и мы их убьем
             delete pclient();
-         
             exit(0);
         }
         */
-        pclient->process_request();
+        pclient->working_thread();
         
         delete pclient;
     }
