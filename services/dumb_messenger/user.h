@@ -13,6 +13,7 @@ class user
 public:
     user(string name, string password);
     ulong save();
+    ulong login();
     user(const user& orig);
     virtual ~user();
 private:

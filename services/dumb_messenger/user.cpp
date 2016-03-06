@@ -22,10 +22,42 @@ user::save()
 {
     ulong status = -1;
     
-    string name_hash = md5(name);
     string pass_hash = md5(password);
 
-    mkdir(name_hash.c_str(), 0777);
+    mkdir(name.c_str(), 0777);
+    
+    ofstream ofs(name + "/pass_hash");    
+    
+    if(ofs.good())
+    {
+        ofs << pass_hash << endl;
+        ofs.close();
+        
+        status = 0x0;
+    }
+    
+    return status;
+}
+
+ulong
+user::login()
+{
+    ulong status = -1;
+    
+    string pass_hash = md5(password);
+    string saved_pass_hash = "";
+    
+    ifstream ifs(name + "/pass_hash");    
+    
+    if(ifs.good())
+    {
+        ifs >> saved_pass_hash;
+        ifs.close();
+        
+        //давай я как цапля постою - а ты мне погоны отдашь?
+        if(saved_pass_hash.compare(pass_hash) == 0x0)
+            status = 0x0;
+    }
     
     return status;
 }

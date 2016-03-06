@@ -48,7 +48,7 @@ client::connect(sockaddr* client_socket,
     setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes));
     
     struct timeval timeout;      
-    timeout.tv_sec = 2;
+    timeout.tv_sec = 10;
     timeout.tv_usec = 0;
     
     setsockopt ( socketfd, 
@@ -108,17 +108,22 @@ client::process_user_request(string request)
     stringstream ss(request);
     
     ss >> user_request;
-
+        
+    if(user_request == "get")
+    {
+        return answer;
+    }
+    
+    ss >> user_name;
+    ss >> user_pass;
+        
+    if(user_name == "" || user_pass == "")
+        return "Invalid parameter";
+        
+    cur_user = new user(user_name,user_pass);
+    
     if(user_request == "add")
     {
-        ss >> user_name;
-        ss >> user_pass;
-        
-        if(user_name == "" || user_pass == "")
-            return "Invalid parameter";
-        
-        cur_user = new user(user_name,user_pass);
-        
         if(cur_user->save() == -1)
         {
             delete cur_user;
@@ -139,11 +144,28 @@ client::process_user_request(string request)
         return answer;
     }
     
-    if(user_request == "get")
+    if(user_request == "login")
     {
+        if(cur_user->login() == -1)
+        {
+            delete cur_user;
+            cur_user = NULL;
+          
+            answer = "Invalid user name or password";
+        }
+        else
+        {
+            answer = "Success";
+        }
+        
+        if(autorized_user)
+            delete autorized_user;
+        
+        autorized_user = cur_user;
+        
         return answer;
     }
-    
+
     if(user_request == "remove")
     {
         ss >> user_name;

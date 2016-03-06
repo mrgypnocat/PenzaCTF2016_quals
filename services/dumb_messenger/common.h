@@ -14,6 +14,7 @@ using namespace std;
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <cstdlib>
 #include <sys/socket.h>
