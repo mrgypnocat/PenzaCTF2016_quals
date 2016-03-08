@@ -14,11 +14,18 @@ public:
     user(string name, string password);
     ulong save();
     ulong login();
+    ulong cleanup();
+    string get_name();
+    
     user(const user& orig);
     virtual ~user();
+    
 private:
     string name;
     string password;
+    
+    string name_hash;
+    string pass_hash;
 };
 
 #endif	/* USER_H */

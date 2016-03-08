@@ -11,6 +11,9 @@ user::user(string name, string password)
 {
     this->name = name;
     this->password = password;
+    
+    this->name_hash = md5(name);
+    this->pass_hash = md5(password);
 }
 
 user::user(const user& orig) 
@@ -22,18 +25,23 @@ user::save()
 {
     ulong status = -1;
     
-    string pass_hash = md5(password);
-
-    mkdir(name.c_str(), 0777);
+    string command = "mkdir " + name_hash;
     
-    ofstream ofs(name + "/pass_hash");    
+    system(command.c_str());
+    
+    ofstream ofs(name_hash + "/user_config");    
     
     if(ofs.good())
     {
+        ofs << name << endl;
         ofs << pass_hash << endl;
         ofs.close();
         
         status = 0x0;
+    }
+    else
+    {
+        cleanup();
     }
     
     return status;
@@ -44,13 +52,14 @@ user::login()
 {
     ulong status = -1;
     
-    string pass_hash = md5(password);
+    string name = "";
     string saved_pass_hash = "";
     
-    ifstream ifs(name + "/pass_hash");    
+    ifstream ifs(name_hash + "/user_config");    
     
     if(ifs.good())
     {
+        ifs >> name;
         ifs >> saved_pass_hash;
         ifs.close();
         
@@ -60,6 +69,24 @@ user::login()
     }
     
     return status;
+}
+
+ulong
+user::cleanup()
+{
+    ulong status = -1;
+    
+    string command ="rm -r " + name_hash;
+    
+    status = system(command.c_str());
+    
+    return status == 0 ? status : -1;
+}
+
+string
+user::get_name()
+{
+    return name;
 }
 
 user::~user() 

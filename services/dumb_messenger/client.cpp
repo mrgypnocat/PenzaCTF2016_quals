@@ -17,6 +17,7 @@ client::client()
     this->in_buffer_size = 0x1000;
     this->in_buffer      = 0x0;
     this->autorized_user = NULL;
+    this->time_out       = 0;
 }
 
 client::client(const client& orig) 
@@ -47,15 +48,19 @@ client::connect(sockaddr* client_socket,
     int yes = 1;
     setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes));
     
-    struct timeval timeout;      
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-    
-    setsockopt ( socketfd, 
-                 SOL_SOCKET, 
-                 SO_RCVTIMEO, 
-                 (char *)&timeout,
-                 sizeof(timeout));
+    //Братишка, я тебя здесь ждать буду
+    if(time_out)
+    {
+        struct timeval timeout;      
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+
+        setsockopt ( socketfd, 
+                     SOL_SOCKET, 
+                     SO_RCVTIMEO, 
+                     (char *)&timeout,
+                     sizeof(timeout));
+    }
     
     in_buffer = (char*)malloc(in_buffer_size);
     
@@ -81,16 +86,18 @@ client::working_thread()
     do
     {
         request = read_str();
-        //TODO
-        //Обработка запроса
+        
         cout << request << endl;
+        
+        if(request == "quit\r\n" || request == "")
+            break;
         
         answer = process_request(request);
         
         cout << answer << endl;
         
-        write_str(answer);
-    }while(request != "quit" && request != "");
+        write_str(answer + "\r\n");
+   }while("yeah bitch");
         
     return request_size;
 }
@@ -101,7 +108,7 @@ client::process_user_request(string request)
     string user_request = "";
     string user_name    = "";
     string user_pass    = "";
-    string answer       = "";
+    string answer       = "Invalid request";
     
     user* cur_user = NULL;
     
@@ -125,21 +132,11 @@ client::process_user_request(string request)
     if(user_request == "add")
     {
         if(cur_user->save() == -1)
-        {
-            delete cur_user;
-            cur_user = NULL;
-          
             answer = "Add user error";
-        }
         else
-        {
             answer = "Success";
-        }
         
-        if(autorized_user)
-            delete autorized_user;
-        
-        autorized_user = cur_user;
+        delete cur_user;
         
         return answer;
     }
@@ -149,29 +146,48 @@ client::process_user_request(string request)
         if(cur_user->login() == -1)
         {
             delete cur_user;
-            cur_user = NULL;
           
             answer = "Invalid user name or password";
         }
         else
         {
             answer = "Success";
+            
+            if(autorized_user)
+                delete autorized_user;
+            
+            autorized_user = cur_user;
         }
-        
-        if(autorized_user)
-            delete autorized_user;
-        
-        autorized_user = cur_user;
         
         return answer;
     }
 
     if(user_request == "remove")
     {
-        ss >> user_name;
-        ss >> user_pass;
+        if(cur_user->login() == -1)
+        {
+            delete cur_user;
+            return "Invalid user name or password";
+        }
+            
+        if(cur_user->cleanup() == -1)
+        {
+            delete cur_user;
+            return "Remove user error";
+        }
         
-        return answer;
+        if(autorized_user)
+        {
+            if(autorized_user->get_name() == cur_user->get_name())
+            {
+                delete autorized_user;
+                autorized_user = NULL;
+            }
+        }
+        
+        delete cur_user;
+        
+        return "Success";
     }
     
     return answer;
@@ -188,7 +204,7 @@ client::process_message_request(string request)
 string
 client::process_request(string request)
 {
-    string answer = "";
+    string answer = "Invalid request";
     string request_word = "";
     
     stringstream ss(request);
@@ -204,11 +220,12 @@ client::process_request(string request)
         
         if(request_word == "message")
         {
-            //if(user == null)
-            //{
-                //answer == "autorize first";
-                //break;
-            //}
+            if(autorized_user == NULL)
+            {
+                answer = "Autorize first";
+                break;
+            }
+            
             string message_request = request.substr(8,request.size());
             answer = process_message_request(ss.str());
             break;

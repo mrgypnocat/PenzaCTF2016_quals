@@ -31,6 +31,7 @@ private:
     sockaddr*   socket;
     socklen_t   socket_size;
     int         socketfd;
+    __time_t    time_out;
     
     user* autorized_user; //--> list<message*> messages;
     
