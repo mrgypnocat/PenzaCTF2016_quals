@@ -89,6 +89,22 @@ user::get_name()
     return name;
 }
 
+string
+user::get_name_from_config(string conf_path)
+{
+    string name = "";
+    
+    ifstream ifs(conf_path + "/user_config");    
+    
+    if(ifs.good())
+    {
+        ifs >> name;
+        ifs.close();
+    }
+    
+    return name;
+}
+
 user::~user() 
 {
 }

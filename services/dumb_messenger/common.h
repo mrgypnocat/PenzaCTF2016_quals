@@ -25,6 +25,7 @@ using namespace std;
 #include <unistd.h>
 #include <wait.h>
 #include <thread>
+#include <dirent.h>
 
 #include "md5.h"
 #include "server.h"

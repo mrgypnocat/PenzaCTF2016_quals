@@ -17,6 +17,8 @@ public:
     ulong cleanup();
     string get_name();
     
+    static string get_name_from_config(string conf_path);
+    
     user(const user& orig);
     virtual ~user();
     

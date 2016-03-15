@@ -37,6 +37,7 @@ private:
     
     string process_request(string request);
     string process_user_request(string request);
+    string get_users();
     string process_message_request(string request);
     //user* add_user(string user_name);
     //давай я здесь насру - мухи слетяться и мы их всех убьем

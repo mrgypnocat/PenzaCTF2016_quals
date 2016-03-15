@@ -101,6 +101,33 @@ client::working_thread()
     return request_size;
 }
 
+string
+client::get_users()
+{
+    string user_list = "";
+    
+    DIR           *d;
+    struct dirent *dir;
+    
+    d = opendir(".");
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
+            if(string(dir->d_name).compare(".")  == 0 ||
+               string(dir->d_name).compare("..") == 0)
+                continue;
+            
+            user_list += user::get_name_from_config(dir->d_name);
+            user_list += "\r\n";
+        }
+
+        closedir(d);
+    }
+    
+    return user_list;
+}
+
 string 
 client::process_user_request(string request)
 {
@@ -115,8 +142,9 @@ client::process_user_request(string request)
     
     ss >> user_request;
         
-    if(user_request == "get")
+    if(user_request == "get_user_list")
     {
+        answer = get_users();
         return answer;
     }
     
