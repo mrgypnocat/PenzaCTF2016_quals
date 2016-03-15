@@ -8,8 +8,8 @@
 #include "common.h"
 
 user::user(string name, string password) 
-{
-    this->name = name;
+{    
+    this->name     = name;
     this->password = password;
     
     this->name_hash = md5(name);
@@ -25,7 +25,7 @@ user::save()
 {
     ulong status = -1;
     
-    string command = "mkdir " + name_hash;
+    string command = "mkdir -p " + name_hash;
     
     system(command.c_str());
     

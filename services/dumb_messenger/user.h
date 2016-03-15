@@ -20,7 +20,7 @@ public:
     user(const user& orig);
     virtual ~user();
     
-private:
+private:    
     string name;
     string password;
     

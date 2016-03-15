@@ -6,7 +6,6 @@
  */
 
 #include "common.h"
-#include "user.h"
 
 client::client() 
 {
@@ -184,7 +183,6 @@ client::process_user_request(string request)
                 autorized_user = NULL;
             }
         }
-        
         delete cur_user;
         
         return "Success";
@@ -196,7 +194,7 @@ client::process_user_request(string request)
 string
 client::process_message_request(string request)
 {
-    string answer = "";
+    string answer = "Invalid parameter";
     
     return answer;
 }

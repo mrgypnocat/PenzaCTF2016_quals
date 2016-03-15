@@ -9,6 +9,8 @@
 
 server::server(string address, string port) 
 {
+    this->root_dir = "dumb_srv/";
+    
     this->address       = address;
     this->port          = port;
     
@@ -81,6 +83,18 @@ server::start_server()
     {
         cout << "Bind error %d" << status << endl;
         
+        return status;
+    
+    }
+    
+    string command = "mkdir "+ this->root_dir;
+    system(command.c_str());
+    
+    status = chdir(this->root_dir.c_str());
+    
+    if(status != 0)
+    {
+        cout << "Create root dir error" << endl;
         return status;
     }
     

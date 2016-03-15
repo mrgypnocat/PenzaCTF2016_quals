@@ -13,6 +13,8 @@
  */
 int main(int argc, char** argv) 
 {
+    int status;
+    
     if(argc < 3)
     {
         cout << "Usage dumb_messenger host port" << endl;
@@ -21,14 +23,21 @@ int main(int argc, char** argv)
     
     server* srv = new server(argv[1],argv[2]);
     
-    srv->start_server();
+    status = srv->start_server();
+    
+    if(status != 0)
+    {
+        srv->stop_server();
+        delete srv;
+        
+        return status;
+    }
     
     srv->process_connections(true);
     
     getchar();
     
     srv->stop_server();
-    
     delete srv;
     
     return 0;

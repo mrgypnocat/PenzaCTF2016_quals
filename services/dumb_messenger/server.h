@@ -36,6 +36,8 @@ private:
     int socketfd;
     
     ulong max_clients_amount;
+    
+    string root_dir;
 };
 
 #endif	/* SERVER_H */
