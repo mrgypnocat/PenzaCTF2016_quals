@@ -26,9 +26,11 @@ using namespace std;
 #include <wait.h>
 #include <thread>
 #include <dirent.h>
+#include <list>
 
 #include "md5.h"
 #include "server.h"
+#include "message.h"
 #include "user.h"
 #include "client.h"
 #endif	/* COMMON_H */

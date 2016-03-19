@@ -7,6 +7,7 @@
       <itemPath>client.h</itemPath>
       <itemPath>common.h</itemPath>
       <itemPath>md5.h</itemPath>
+      <itemPath>message.h</itemPath>
       <itemPath>server.h</itemPath>
       <itemPath>user.h</itemPath>
     </logicalFolder>
@@ -20,6 +21,7 @@
       <itemPath>client.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
       <itemPath>md5.cpp</itemPath>
+      <itemPath>message.cpp</itemPath>
       <itemPath>server.cpp</itemPath>
       <itemPath>user.cpp</itemPath>
     </logicalFolder>

@@ -38,7 +38,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/server.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/client.o \
-	${OBJECTDIR}/user.o
+	${OBJECTDIR}/user.o \
+	${OBJECTDIR}/message.o
 
 
 # C Compiler Flags
@@ -89,6 +90,11 @@ ${OBJECTDIR}/user.o: user.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/user.o user.cpp
+
+${OBJECTDIR}/message.o: message.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/message.o message.cpp
 
 # Subprojects
 .build-subprojects:

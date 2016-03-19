@@ -158,7 +158,7 @@ client::process_user_request(string request)
     
     if(user_request == "add")
     {
-        if(cur_user->save() == -1)
+        if(cur_user->save() == false)
             answer = "Add user error";
         else
             answer = "Success";
@@ -170,7 +170,7 @@ client::process_user_request(string request)
     
     if(user_request == "login")
     {
-        if(cur_user->login() == -1)
+        if(cur_user->login() == false)
         {
             delete cur_user;
           
@@ -178,7 +178,9 @@ client::process_user_request(string request)
         }
         else
         {
-            answer = "Success";
+            answer = "Success\n";
+            
+            answer += cur_user->get_message_list();
             
             if(autorized_user)
                 delete autorized_user;
@@ -191,13 +193,13 @@ client::process_user_request(string request)
 
     if(user_request == "remove")
     {
-        if(cur_user->login() == -1)
+        if(cur_user->login() == false)
         {
             delete cur_user;
             return "Invalid user name or password";
         }
             
-        if(cur_user->cleanup() == -1)
+        if(cur_user->cleanup() == false)
         {
             delete cur_user;
             return "Remove user error";
@@ -222,7 +224,31 @@ client::process_user_request(string request)
 string
 client::process_message_request(string request)
 {
-    string answer = "Invalid parameter";
+    string message_request = "";
+    string user_name       = "";
+    string message_text    = "";
+    string answer          = "Invalid parameter";
+    
+    stringstream ss(request);
+    
+    ss >> message_request;
+    
+    if(message_request == "get_message_list")
+    {
+        answer = autorized_user->get_message_list();
+        return answer;
+    }
+    
+    if(message_request == "send")
+    {
+         ss >> user_name;
+         ss >> message_text;
+         
+         if(user_name == "" || message_text == "")
+             return "Invalid parameter";
+         
+         answer = autorized_user->send_message(user_name,message_text);
+    }
     
     return answer;
 }
@@ -253,7 +279,7 @@ client::process_request(string request)
             }
             
             string message_request = request.substr(8,request.size());
-            answer = process_message_request(ss.str());
+            answer = process_message_request(message_request);
             break;
         }
     }
