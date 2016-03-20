@@ -17,8 +17,10 @@ public:
     bool cleanup();
     string get_name();
     
-    string get_message_list();
+    bool refresh_message_list();
     string send_message(string user_name, string message_text);
+    
+    string get_message(string direction, string message_num);
     
     static string get_name_from_config(string conf_path);
     static bool does_user_exist(string user_name);
@@ -26,14 +28,18 @@ public:
     user(const user& orig);
     virtual ~user();
     
-private:    
+private:
+    
+    void cleanup_message_list();
+    
     string name;
     string password;
     
     string name_hash;
     string pass_hash;
     
-    list<message*> message_list;
+    vector<message*> in_messages;
+    vector<message*> out_messages;
 };
 
 #endif	/* USER_H */

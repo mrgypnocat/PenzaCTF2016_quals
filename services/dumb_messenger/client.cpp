@@ -180,7 +180,9 @@ client::process_user_request(string request)
         {
             answer = "Success\n";
             
-            answer += cur_user->get_message_list();
+            cur_user->refresh_message_list();
+            
+            answer += cur_user->get_message("in_message","all");
             
             if(autorized_user)
                 delete autorized_user;
@@ -227,15 +229,27 @@ client::process_message_request(string request)
     string message_request = "";
     string user_name       = "";
     string message_text    = "";
+    string direction       = "";
+    string message_num     = "";
     string answer          = "Invalid parameter";
     
     stringstream ss(request);
     
     ss >> message_request;
     
-    if(message_request == "get_message_list")
-    {
-        answer = autorized_user->get_message_list();
+    if(message_request == "get")
+    {        
+        ss >> direction;
+        ss >> message_num;
+        
+        if(direction == "" || message_num == "")
+            return answer;
+        
+        if(!autorized_user->refresh_message_list())
+            return "Get messages error";
+        
+        answer = autorized_user->get_message(direction,message_num);
+        
         return answer;
     }
     

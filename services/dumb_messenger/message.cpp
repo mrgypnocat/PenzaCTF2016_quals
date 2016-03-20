@@ -37,19 +37,35 @@ message::get_time_stamp()
 bool
 message::save(string from, string to, string message_text)
 {
-    string path = md5(to);
+    string to_path = md5(to);
+    string from_path = md5(from);
+    
     bool status = false;
     
     time_stamp = get_time_stamp();
     
-    ofstream out_file(path + "/" + md5(from + time_stamp));
+    ofstream in_box(to_path + "/in_box/" + md5(from + time_stamp));
     
-    if(out_file.good())
+    if(in_box.good())
     {
-        out_file << time_stamp << endl;
-        out_file << from << endl;
-        out_file << message_text << endl;
-        out_file.close();
+        in_box << time_stamp << endl;
+        in_box << from << endl;
+        in_box << message_text << endl;
+        in_box.close();
+    }
+    else
+    {
+        return false;
+    }
+    
+    ofstream out_box(from_path + "/out_box/" + md5(to + time_stamp));
+    
+    if(out_box.good())
+    {
+        out_box << time_stamp << endl;
+        out_box << to << endl;
+        out_box << message_text << endl;
+        out_box.close();
         status = true;
     }
     

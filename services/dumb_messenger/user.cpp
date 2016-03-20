@@ -15,7 +15,8 @@ user::user(string name, string password)
     this->name_hash = md5(name);
     this->pass_hash = md5(password);
     
-    this->message_list.clear();
+    this->in_messages.clear();
+    this->out_messages.clear();
 }
 
 user::user(const user& orig) 
@@ -28,7 +29,12 @@ user::save()
     bool status = false;
     
     string command = "mkdir -p " + name_hash;
+    system(command.c_str());
     
+    command = "mkdir -p " + name_hash + "/in_box";
+    system(command.c_str());
+    
+    command = "mkdir -p " + name_hash + "/out_box";
     system(command.c_str());
     
     ofstream ofs(name_hash + "/user_config");    
@@ -91,52 +97,65 @@ user::get_name()
     return name;
 }
 
-string
-user::get_message_list()
+bool
+user::refresh_message_list()
 {
     ulong counter = 0;
     
-    string answer = "";
     string message_path;
     
-    DIR           *d;
+    DIR           *in_d;
+    DIR           *out_d;
     struct dirent *dir;
     
-    d = opendir(name_hash.c_str());
-    if (d)
+    //да как я вилкой то чистить буду??
+    cleanup_message_list();
+    
+    in_d = opendir((name_hash + "/in_box").c_str());
+    if (in_d)
     {
-        while ((dir = readdir(d)) != NULL)
+        while ((dir = readdir(in_d)) != NULL)
         {
             if(string(dir->d_name).compare(".")  == 0 ||
                string(dir->d_name).compare("..") == 0 ||
                string(dir->d_name).compare("user_config") == 0)
                 continue;
             
-            message_path = name_hash + "/" + string(dir->d_name);
+            message_path = name_hash + "/in_box/" + string(dir->d_name);
             message* cur_m = new message();
     
-            if(cur_m->load(message_path))
-            {
-                counter++;
-                
-                answer += to_string(counter) + ") " +
-                          cur_m->time_stamp  + " " +
-                          cur_m->user_name;
-                
-                answer += "\r\n";
-                
-                message_list.push_back(cur_m);
-            }
+            if(cur_m->load(message_path))                
+                in_messages.push_back(cur_m);
             else
-            {
                 delete cur_m;
-            }
         }
 
-        closedir(d);
+        closedir(in_d);
     }
     
-    return answer;
+    out_d = opendir((name_hash + "/out_box").c_str());
+    if (out_d)
+    {
+        while ((dir = readdir(out_d)) != NULL)
+        {
+            if(string(dir->d_name).compare(".")  == 0 ||
+               string(dir->d_name).compare("..") == 0 ||
+               string(dir->d_name).compare("user_config") == 0)
+                continue;
+            
+            message_path = name_hash + "/out_box/" + string(dir->d_name);
+            message* cur_m = new message();
+    
+            if(cur_m->load(message_path))                
+                out_messages.push_back(cur_m);
+            else
+                delete cur_m;
+        }
+
+        closedir(out_d);
+    }
+    
+    return true;
 }
 
 string
@@ -153,6 +172,65 @@ user::send_message(string dest_user_name, string message_text)
         return "Send message error";
     
     return "Success";
+}
+
+string
+user::get_message(string direction, string message_num)
+{
+    string answer = "";
+    ulong counter = 0;
+    
+    message* cur_m = NULL;
+    
+    vector<message*>* message_list = NULL;
+    
+    istringstream buffer(message_num);
+    int value;
+    
+    if(direction == "in_message")
+        message_list = &in_messages;
+    if(direction == "out_message")
+        message_list = &out_messages;
+    
+    if(message_list == NULL)
+        return "No messagess";
+    
+    if(message_num == "all")
+    {
+        for(auto iter = message_list->begin(); iter != message_list->end(); iter++)
+        {
+            counter++;
+            if(direction == "in_message")
+                answer += to_string(counter)  + ") "     +
+                          (*iter)->time_stamp + " from " +
+                          (*iter)->user_name  + "\n";
+            else
+                answer += to_string(counter)  + ") "   +
+                          (*iter)->time_stamp + " to " +
+                          (*iter)->user_name  + "\n";
+        }
+    }
+    else
+    {
+        buffer >> value;
+        if(value <= 0 || value > message_list->size())
+            return "Invalid message num";
+
+        cur_m = message_list->at(value - 1);
+        if(cur_m == NULL)
+            return "Message parsing error";
+
+        if(direction == "in_message")
+            answer = cur_m->time_stamp   + "\nFrom:\n" +
+                     cur_m->user_name    + "\nMessage:\n" +
+                     cur_m->message_text + "\n";
+        else
+            answer = cur_m->time_stamp   + "\nTo:\n" +
+                     cur_m->user_name    + "\nMessage:\n" +
+                     cur_m->message_text + "\n";
+    }
+    
+    return answer;
 }
 
 string
@@ -192,11 +270,21 @@ user::does_user_exist(string user_name)
     return exist;
 }
 
+void
+user::cleanup_message_list()
+{
+    for(auto iter = in_messages.begin(); iter != in_messages.end(); iter++)
+        delete *iter;
+    
+    for(auto iter = out_messages.begin(); iter != out_messages.end(); iter++)
+        delete *iter; 
+        
+    in_messages.clear();
+    out_messages.clear();
+}
+
 user::~user() 
 {
-    for(auto iter = message_list.begin(); iter != message_list.end(); iter++)
-        delete *iter;        
-        
-    message_list.clear();
+    cleanup_message_list();
 }
 
