@@ -17,10 +17,12 @@ public:
     
     bool save(string from, string to, string message_text);
     bool load(string messages_path);
+    bool clean_up();
     
     string time_stamp;
     string user_name;
     string message_text;
+    string path;
 private:
     
     string get_time_stamp();

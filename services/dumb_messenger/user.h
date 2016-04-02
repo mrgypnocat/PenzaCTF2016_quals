@@ -22,6 +22,8 @@ public:
     
     string get_message(string direction, string message_num);
     
+    bool remove_message(string direction, string message_num);
+    
     static string get_name_from_config(string conf_path);
     static bool does_user_exist(string user_name);
     

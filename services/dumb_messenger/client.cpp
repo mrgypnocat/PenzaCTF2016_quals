@@ -253,6 +253,25 @@ client::process_message_request(string request)
         return answer;
     }
     
+    if(message_request == "remove")
+    {        
+        ss >> direction;
+        ss >> message_num;
+        
+        if(direction == "" || message_num == "")
+            return answer;
+        
+        if(!autorized_user->refresh_message_list())
+            return "Remove messages error";
+        
+        if(autorized_user->remove_message(direction,message_num))
+            answer = "Success";
+        else
+            answer = "Error removing message";
+        
+        return answer;
+    }
+    
     if(message_request == "send")
     {
          ss >> user_name;

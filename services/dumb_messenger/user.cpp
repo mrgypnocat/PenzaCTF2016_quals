@@ -233,6 +233,51 @@ user::get_message(string direction, string message_num)
     return answer;
 }
 
+bool
+user::remove_message(string direction, string message_num)
+{
+    message* cur_m = NULL;
+    
+    vector<message*>* message_list = NULL;
+    
+    istringstream buffer(message_num);
+    int value;
+    
+    if(direction == "in_message")
+        message_list = &in_messages;
+    if(direction == "out_message")
+        message_list = &out_messages;
+    
+    if(message_list == NULL)
+        return "No messagess";
+    
+    if(message_num == "all")
+    {
+        for(auto iter = message_list->begin(); iter != message_list->end(); iter++)
+        {
+            (*iter)->clean_up();
+            
+            delete *iter;
+        }
+    }
+    else
+    {
+        buffer >> value;
+        if(value <= 0 || value > message_list->size())
+            return false;
+
+        cur_m = message_list->at(value - 1);
+        if(cur_m == NULL)
+            return false;
+
+        cur_m->clean_up();
+        
+        delete cur_m;
+    }
+    
+    return true;
+}
+
 string
 user::get_name_from_config(string conf_path)
 {

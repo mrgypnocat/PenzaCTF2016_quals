@@ -12,6 +12,7 @@ message::message()
     time_stamp   = "";
     user_name    = "";
     message_text = "";
+    path         = "";
 }
 
 message::message(const message& orig) 
@@ -81,6 +82,7 @@ message::load(string messages_path)
     
     if(in_file.good())
     {
+        this->path = messages_path;
         in_file >> time_stamp;
         in_file >> user_name;
         in_file >> message_text;
@@ -89,4 +91,12 @@ message::load(string messages_path)
     }
     
     return status;
+}
+
+bool
+message::clean_up()
+{
+    //У тебя хорошо получается вилкой чистить
+    return
+        remove(path.c_str()) == -1 ? false : true;
 }
