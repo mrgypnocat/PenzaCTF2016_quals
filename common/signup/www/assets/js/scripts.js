@@ -36,3 +36,7 @@ jQuery(document).ready(function() {
     
     
 });
+
+function get_captcha() {
+    window.location.href = 'crackme';
+}

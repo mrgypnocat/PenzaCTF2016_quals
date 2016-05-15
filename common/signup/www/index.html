@@ -65,30 +65,30 @@
                 <div class="form-top-divider"></div>
               </div>
               <div class="form-bottom">
-		<form role="form" action="" method="post" class="registration-form">
+		<form role="form" action="auth.brainfuck" method="post" class="registration-form">
 		  <div class="form-group">
 		    <label class="sr-only" for="form-first-name">Team name</label>
-		    <input type="text" name="form-first-name" placeholder="Team name" class="form-first-name form-control" id="form-first-name">
+		    <input type="text" name="name" placeholder="Team name" class="form-first-name form-control" id="form-first-name">
 		  </div>
 		  <div class="form-group">
 		    <label class="sr-only" for="form-last-name">Email</label>
-		    <input type="text" name="form-last-name" placeholder="Email" class="form-last-name form-control" id="form-last-name">
+		    <input type="text" name="email" placeholder="Email" class="form-last-name form-control" id="form-last-name">
 		  </div>
 		  <div class="form-group">
 		    <label class="sr-only" for="form-email">About your team</label>
-		    <input type="text" name="form-email" placeholder="About your team (university, forum, etc.)" class="form-email form-control" id="form-email">
+		    <input type="text" name="about" placeholder="About your team (university, forum, etc.)" class="form-email form-control" id="form-email">
 		  </div>
                   <!-- captcha -->
                   <div class="row no-gutter">
                     <div class="col-xs-5">
                       <div class="form-group">
-                        <button style="background: #469DCC;" type="submit" class="btn">Get catpcha</button>
+                        <button style="background: #469DCC;" type="button" class="btn" onClick="get_captcha()">Get captcha</button>
                       </div>
                     </div>
                     <div style="padding-left:15px;" class="col-xs-7">
                       <div class="form-group">
 		        <label class="sr-only" for="form-last-name">Captcha</label>
-		        <input type="text" name="form-last-name" placeholder="Captcha" class="form-last-name form-control" id="form-last-name">
+		        <input type="text" name="captcha" placeholder="Captcha" class="form-last-name form-control" id="form-last-name">
                       </div>
                     </div>
                   </div>
