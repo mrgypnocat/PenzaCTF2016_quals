@@ -327,7 +327,8 @@ user::cleanup_message_list()
     
     for(auto iter = out_messages.begin(); iter != out_messages.end(); iter++)
         delete *iter; 
-        
+    
+    //Бля у меня так шишка встала....
     in_messages.clear();
     out_messages.clear();
 }
