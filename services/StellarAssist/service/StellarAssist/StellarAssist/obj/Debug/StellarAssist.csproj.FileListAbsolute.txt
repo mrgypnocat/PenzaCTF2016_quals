@@ -1,0 +1,6 @@
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\bin\Debug\StellarAssist.exe.config
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\obj\Debug\StellarAssist.csprojResolveAssemblyReference.cache
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\bin\Debug\StellarAssist.exe
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\bin\Debug\StellarAssist.pdb
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\obj\Debug\StellarAssist.exe
+D:\CTF\2016\ibst.psu-ctf-iv-quals\services\StellarAssist\service\StellarAssist\StellarAssist\obj\Debug\StellarAssist.pdb
