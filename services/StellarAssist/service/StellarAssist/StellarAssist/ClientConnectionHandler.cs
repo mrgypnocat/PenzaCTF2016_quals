@@ -1,114 +1,114 @@
 ﻿using System;
-using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace StellarAssist
 {
-    public abstract class TcpCommandAbstract
-    {
-        public virtual string ClientId { get; set; }
-        public abstract string CommandTextString { get; }
-        public abstract void Execute(NetworkStream clientStream);
-
-        public static void SendData(string data, NetworkStream someNetworkStream)
-        {
-            var dataBytes = Encoding.UTF8.GetBytes(data);
-            someNetworkStream.Write(dataBytes, 0, dataBytes.Length);
-        }
-
-        public static string ReadData(NetworkStream someNetworkStream, int buffSize = 24)
-        {
-            var message = "";
-            var data = new byte[buffSize];
-            do
-            {
-                var bytes = someNetworkStream.Read(data, 0, data.Length);
-                if (bytes == 0)
-                {
-                    throw new Exception();
-                }
-                message += Encoding.UTF8.GetString(data, 0, bytes);
-            } while (someNetworkStream.DataAvailable);
-            return message;
-        }
-    }
-
     public sealed class ClientConnectionHandler
     {
-        private readonly TcpClient _someClient;
+        private readonly TcpClient _someTcpClient;
         private readonly NetworkStream _clientStream;
         private readonly string _clientId;
-        private readonly string _sessionKey;
 
-        private static readonly TcpCommandAbstract[] TcpCommandsAbstract;
-        private static readonly int MaxCommandLength;
-        
-        static ClientConnectionHandler()
+        public ClientConnectionHandler(TcpClient someTcpClient)
         {
-            TcpCommandsAbstract = new TcpCommandAbstract[]
-                {
-                    new TcpCommandGetData(), 
-                    new TcpCommandGetResult(), 
-                    new TcpCommandSetData(), 
-                    new TcpCommandSetResult(), 
-                };
-            MaxCommandLength = TcpCommandsAbstract.Select(c => c.CommandTextString.Length).Concat(new[] { 0 }).Max();
-        }
-
-        public ClientConnectionHandler(TcpClient someClient)
-        {
-            _someClient = someClient;
-            _clientStream = _someClient.GetStream();
-            Console.WriteLine("Client {0} connected ", _someClient.Client.RemoteEndPoint);
+            _someTcpClient = someTcpClient;
+            _clientStream = _someTcpClient.GetStream();
+            Console.WriteLine("Client {0} connected ", _someTcpClient.Client.RemoteEndPoint);
 
             //waiting client messages
             try
             {
+                string sessionKey = null;
                 while (_clientStream.CanRead)
                 {
                     //at first server should recognize client
                     if (_clientId == null)
                     {
-                        _clientId = TcpCommandAbstract.ReadData(_clientStream);
-                        _sessionKey = CryptoServiceKeysRepository.GetSessionKey(_clientId);
+                        _clientId = new Regex(@"\W").Replace(ReadData(),"");
+                        sessionKey = CryptoServiceKeysRepository.GetSessionKey(_clientId);
                         Console.WriteLine("Client id: {0}", _clientId);
-                        TcpCommandAbstract.SendData(CryptoServiceKeysRepository.PublicKeyString, _clientStream);
+                        SendData(CryptoServiceKeysRepository.PublicKeyString);
                     }
                     else
                     {
-                        var commandTextCrypted = TcpCommandAbstract.ReadData(_clientStream);
-                        var cryptoPerformer = new CryptoPerformer(_sessionKey);
+                        var commandTextCrypted = ReadData();
+                        
+                        var cryptoPerformer = new CryptoPerformer(sessionKey);
                         var commandText = cryptoPerformer.Perform(commandTextCrypted);
+                        var client = new Client(_clientId);
 
-                        Console.WriteLine("Client {0} command: {1}", _someClient.Client.RemoteEndPoint, commandText);
-                        foreach (var tcpCommand in TcpCommandsAbstract.Where(tcpCommand => commandText.ToUpper().Contains(tcpCommand.CommandTextString.ToUpper())))
+                        Console.WriteLine("Client {0} command: {1}", _someTcpClient.Client.RemoteEndPoint, commandText);
+                        
+                        if (commandText.ToUpper().Contains("GetData".ToUpper()))
                         {
-                            tcpCommand.ClientId = _clientId;
-                            //TODO:
-                            try
-                            {
-                                tcpCommand.Execute(_clientStream);
-                            }
-                            catch (Exception)
-                            {
-                                Console.WriteLine("{0} executed", tcpCommand.CommandTextString);
-                            }
-                            
+                            SendData(client.ReadClientData());
+                        }
+                        if (commandText.ToUpper().Contains("GetCode".ToUpper()))
+                        {
+                            SendData(client.ExecuteClientCode());
+                        }
+                        if (commandText.ToUpper().Contains("GetResult".ToUpper()))
+                        {
+                            SendData(client.ExecuteClientCode());
+                        }
+                        if (commandText.ToUpper().Contains("SetData".ToUpper()))
+                        {
+                            var dataTextCrypted = ReadData();
+                            var dataTextEncrypted = cryptoPerformer.Perform(dataTextCrypted);
+                            SendData(client.WriteClientData(dataTextEncrypted));
+                        }
+                        if (commandText.ToUpper().Contains("SetCode".ToUpper()))
+                        {
+                            SendData(client.ExecuteClientCode());
+                        }
+                        
+                        if (commandText.ToUpper().Contains("Exit".ToUpper()))
+                        {
+                            Finish();
                         }
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
+                Console.WriteLine("Some shit happens");
             }
             finally
             {
-                Console.WriteLine("Client disconnected");
-                _clientStream.Close();
-                someClient.Close();
+                Finish();
             }
+        }
+        private void Finish()
+        {
+            Console.WriteLine("Client disconnected");
+            _clientStream.Close();
+            _someTcpClient.Close();
+        }
+
+        public void SendData(string data)
+        {
+            var dataBytes = Encoding.UTF8.GetBytes(data+"\r\n");
+            _clientStream.Write(dataBytes, 0, dataBytes.Length);
+        }
+
+        public string ReadData(int buffSize = 24)
+        {
+            var message = "";
+            do
+            {
+                var data = new byte[buffSize];
+                var bytes = _clientStream.Read(data, 0, data.Length);
+                if (bytes == 0)
+                {
+                    throw new Exception();
+                }
+                message += Encoding.UTF8.GetString(data, 0, bytes);
+            } while (_clientStream.DataAvailable);
+            return message;
         }
     }
 }

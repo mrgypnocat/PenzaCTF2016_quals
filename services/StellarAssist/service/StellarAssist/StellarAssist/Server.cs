@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
@@ -20,7 +21,16 @@ namespace StellarAssist
 
             TcpListener = new TcpListener(LocalIpAddress, localPort);
             TcpClientParams=new TcpClient();
-            RunWorkingCycle();
+            //TODO
+	        if (SomeShitCodeGuy())
+            //if (true)
+	        {
+                RunWorkingCycle();
+	        }
+	        else
+	        {
+	            Console.WriteLine("only root can run it!");
+	        }
         }
 
         ~Server()
@@ -31,9 +41,28 @@ namespace StellarAssist
             }
         }
 
+        private bool SomeShitCodeGuy()
+        {
+            var proc = new Process
+            {
+                StartInfo =
+                {
+                    FileName = "/bin/bash",
+                    Arguments = "-c whoami",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                }
+            };
+            proc.Start();
+            var result = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(1000);
+            return result.Contains("root");
+        }
+
 	    private void RunWorkingCycle()
         {
             TcpListener.Start();
+            Console.WriteLine("Don't fuck with Chuck!");
             while (true)
             {
                 var someClient = TcpListener.AcceptTcpClient();
