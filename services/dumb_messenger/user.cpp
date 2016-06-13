@@ -212,6 +212,7 @@ user::get_message(string direction, string message_num)
     }
     else
     {
+        //Давай шашки из говна сделаем?
         buffer >> value;
         if(value <= 0 || value > message_list->size())
             return "Invalid message num";
@@ -255,9 +256,12 @@ user::remove_message(string direction, string message_num)
     {
         for(auto iter = message_list->begin(); iter != message_list->end(); iter++)
         {
+            //Теперь я полковник
             (*iter)->clean_up();
             
             delete *iter;
+            
+            message_list->erase(iter);
         }
     }
     else
@@ -323,7 +327,8 @@ user::cleanup_message_list()
     
     for(auto iter = out_messages.begin(); iter != out_messages.end(); iter++)
         delete *iter; 
-        
+    
+    //Бля у меня так шишка встала....
     in_messages.clear();
     out_messages.clear();
 }
