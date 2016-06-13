@@ -43,15 +43,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientConnectionHandler.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="Crypt.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="ShuffleRegister.cs" />
-    <Compile Include="TcpCommandGetData.cs" />
-    <Compile Include="TcpCommandGetResult.cs" />
-    <Compile Include="TcpCommandSetData.cs" />
-    <Compile Include="TcpCommandSetResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
