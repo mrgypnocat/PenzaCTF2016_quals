@@ -5,6 +5,7 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 
@@ -93,16 +94,20 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/success.html", 307)
 }
 
-func getCaptcha() (captcha, path string) {
-	captcha = "truecaptcha"
-	path = "/bin/true"
-	return
-}
-
 func captchaHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-control", "private")
 
-	captcha, path := getCaptcha()
+	workdir, err := ioutil.TempDir("/tmp/", "revcaptcha_")
+	if err != nil {
+		log.Println("Error:", err)
+		return
+	}
+
+	captcha, path, err := makeCaptcha(workdir, "/home/website/csource/")
+	if err != nil {
+		log.Println("Error:", err)
+		return
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:  "PHPSESSID",
@@ -110,6 +115,19 @@ func captchaHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.ServeFile(w, r, path)
+
+	err = os.RemoveAll(workdir)
+	if err != nil {
+		log.Println("Error:", err)
+		return
+	}
+
+	ip := r.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+
+	log.Printf("Send captcha '%s' to %s", captcha, ip)
 }
 
 func main() {
@@ -121,6 +139,6 @@ func main() {
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		return
+		log.Println("Error:", err)
 	}
 }
