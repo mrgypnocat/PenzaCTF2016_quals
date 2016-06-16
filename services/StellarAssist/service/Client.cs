@@ -11,7 +11,8 @@ namespace StellarAssist
         public string ClientFolder { get; private set; }
 
         public const string KeySessionFileName = "session.key";
-        public const string ExecuteFileName = "data.exe";
+        public const string SourceFileName = "code.cs";
+        public const string ExecuteFileName = "code.exe";
         public const string DataFileName = "data.dat";
 
         private string _sessionKey;
@@ -22,30 +23,38 @@ namespace StellarAssist
                 if (_sessionKey==null)
                 {
                     var filePath = Path.Combine(ClientFolder, KeySessionFileName);
-                    _sessionKey = File.Exists(filePath) ? File.ReadAllText(filePath, Encoding.UTF8) : CryptoServiceKeysRepository.GetSessionKey(ClientId);
+                    if (File.Exists(filePath))
+                    {
+                        _sessionKey = File.ReadAllText(filePath, Encoding.UTF8);
+                    }
+                    else
+                    {
+                        _sessionKey = CryptoServiceKeysRepository.GetSessionKey(ClientId);
+                        var writer = new StreamWriter(filePath, append: false, encoding: Encoding.UTF8);
+                        writer.Write(_sessionKey);
+                        writer.Flush();
+                        writer.Close();
+                    }
+                     
                 }
                 return _sessionKey;
             }
             set
             {
                 _sessionKey = value;
+                var writer = new StreamWriter(Path.Combine(ClientFolder, KeySessionFileName), append: false, encoding: Encoding.UTF8);
+                writer.Write(_sessionKey);
+                writer.Flush();
+                writer.Close();
             }
         }
-
 
         public Client(string clientId)
         {
             _sessionKey = null;
             ClientId = clientId;
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            if (ClientId != null)
-            {
-                ClientFolder = Path.Combine(appDir, ClientId);
-            }
-            else
-            {
-                ClientFolder = appDir;
-            }
+            ClientFolder = ClientId != null ? Path.Combine(appDir, ClientId) : appDir;
             if (!Directory.Exists(ClientFolder))
             {
                 Directory.CreateDirectory(ClientFolder);
@@ -78,12 +87,14 @@ namespace StellarAssist
                 var performer = new CryptoPerformer(ClientId);
                 result=performer.Perform(result);
             }
+            reader.Close();
             return result;
         }
 
         public string WriteClientCode(string data)
         {
-            var filepath = Path.Combine(ClientFolder, ExecuteFileName);
+            var filepath = Path.Combine(ClientFolder, SourceFileName);
+            
             var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8);
             writer.Write(data);
 
@@ -94,8 +105,8 @@ namespace StellarAssist
                 {
                     StartInfo =
                         {
-                            FileName = "/bin/bash",
-                            Arguments = "-c gmcs \" " + filepath + " \"",
+                            FileName = "gmcs",
+                            Arguments = filepath,
                             UseShellExecute = false,
                             RedirectStandardOutput = true
                         }
@@ -108,12 +119,13 @@ namespace StellarAssist
 
         public string ExecuteClientCode(int maxExecutingTime=2500)
         {
+            var filepath = Path.Combine(ClientFolder, ExecuteFileName);
             var proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = "/bin/bash",
-                    Arguments = "-c mono \" " + ExecuteFileName + " \"",
+                    FileName = "mono",
+                    Arguments = filepath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true
                 }

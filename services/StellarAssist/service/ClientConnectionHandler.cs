@@ -45,25 +45,28 @@ namespace StellarAssist
                         
                         if (commandText.ToUpper().Contains("GetData".ToUpper()))
                         {
-                            SendData(client.ReadClientData());
-                        }
-                        if (commandText.ToUpper().Contains("GetCode".ToUpper()))
-                        {
-                            SendData(client.ExecuteClientCode());
+                            var data = client.ReadClientData();
+                            SendData(cryptoPerformer.Perform(data));
                         }
                         if (commandText.ToUpper().Contains("GetResult".ToUpper()))
                         {
-                            SendData(client.ExecuteClientCode());
+                            client.ExecuteClientCode();
+                            var data = client.ReadClientData();
+                            SendData(cryptoPerformer.Perform(data));
                         }
                         if (commandText.ToUpper().Contains("SetData".ToUpper()))
                         {
                             var dataTextCrypted = ReadData();
                             var dataTextEncrypted = cryptoPerformer.Perform(dataTextCrypted);
-                            SendData(client.WriteClientData(dataTextEncrypted));
+                            var result = client.WriteClientData(dataTextEncrypted);
+                            SendData(result);
                         }
                         if (commandText.ToUpper().Contains("SetCode".ToUpper()))
                         {
-                            SendData(client.ExecuteClientCode());
+                            var dataTextCrypted = ReadData();
+                            var dataTextEncrypted = cryptoPerformer.Perform(dataTextCrypted);
+                            var result = client.WriteClientCode(dataTextEncrypted);
+                            SendData(result);
                         }
                         
                         if (commandText.ToUpper().Contains("Exit".ToUpper()))
@@ -73,9 +76,10 @@ namespace StellarAssist
                     }
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 Console.WriteLine("Some shit happens");
+                Console.WriteLine(ex.Message);
             }
             finally
             {
