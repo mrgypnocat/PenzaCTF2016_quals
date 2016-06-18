@@ -17,10 +17,12 @@ message::message()
 
 message::message(const message& orig) 
 {
+    //Пидорас ты, а не лейтенант!
 }
 
 message::~message() 
 {
+    //— Чисти-чисти-чисти-чисти! Говно!
 }
 
 string

@@ -109,22 +109,26 @@ client::get_users()
     DIR           *d;
     struct dirent *dir;
     
+    
+    //— Братишка! Братишка!
     d = opendir(".");
     if (d)
     {
+        //— Заебал, блядь!
         while ((dir = readdir(d)) != NULL)
         {
+            //— Как поспал, братишка? Проголодался наверное, братишка?
             if(string(dir->d_name).compare(".")  == 0 ||
                string(dir->d_name).compare("..") == 0)
                 continue;
-            
+            // — Ёб твою мать! Блядь! Иди отсюда на хуй, блядь!
             user_list += user::get_name_from_config(dir->d_name);
             user_list += "\r\n";
         }
-
+        //— Что случилося-то?
         closedir(d);
     }
-    
+    //— Ты что, обосрался что ли, мудак, блядь?
     return user_list;
 }
 
@@ -173,7 +177,7 @@ client::process_user_request(string request)
         if(cur_user->login() == false)
         {
             delete cur_user;
-          
+            //Начальник! Начальник! Этот пидорас обосрался, бля! Начальник!
             answer = "Invalid user name or password";
         }
         else
@@ -204,7 +208,7 @@ client::process_user_request(string request)
         if(cur_user->cleanup() == false)
         {
             delete cur_user;
-            return "Remove user error";
+            return "Remove user error " + to_string(errno);
         }
         
         if(autorized_user)
@@ -346,7 +350,6 @@ client::write_str(string buffer)
 {
     int writed;
     
-    //writed = write(socketfd,buffer.c_str(),buffer.size());
     writed = send(socketfd,buffer.c_str(),buffer.size(),MSG_NOSIGNAL);
     
     return writed;

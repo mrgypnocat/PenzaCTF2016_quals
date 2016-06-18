@@ -1,7 +1,7 @@
 /* 
  * File:   main.cpp
  * Author: darksider
- *
+ * CoAuthor: pahom
  * Created on February 25, 2016, 7:27 PM
  */
 #include "common.h"

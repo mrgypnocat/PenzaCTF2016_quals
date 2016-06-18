@@ -27,6 +27,7 @@ using namespace std;
 #include <thread>
 #include <dirent.h>
 #include <vector>
+#include <errno.h>
 
 #include "md5.h"
 #include "server.h"

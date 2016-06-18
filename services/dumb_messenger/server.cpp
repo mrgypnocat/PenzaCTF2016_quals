@@ -73,8 +73,6 @@ server::start_server()
     
     setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes));
     
-    signal(SIGCHLD, this->sigchild);
-    
     status = bind( socketfd,
                    host_info_list->ai_addr,
                    host_info_list->ai_addrlen);
@@ -177,26 +175,13 @@ void server::connection_thread()
             
             continue;
         }
-        /*
-        if(fork() == 0)
-        {   
-            
-            pclient->working_thread();
-          
-            //давай я вот здесь насру - мухи прилетят и мы их убьем
-            delete pclient();
-            exit(0);
-        }
-        */
+        
+        /*— Ну и как говно, вкусное?
+          — Нууу… Так, знаешь… Как земля.*/
         pclient->working_thread();
         
         delete pclient;
     }
      
     return;
-}
-
-void server::sigchild(int signo)
-{
-    while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
 }
