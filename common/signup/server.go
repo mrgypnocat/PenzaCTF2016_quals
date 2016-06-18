@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"crypto/sha512"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,13 +11,127 @@ import (
 	"os"
 
 	"github.com/naoina/toml"
+
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var db *sql.DB
 
 type team struct {
 	Name      string
 	Email     string
 	About     string
 	IPAddress string
+}
+
+func createCaptchaTable() (err error) {
+
+	_, err = db.Exec(`
+        CREATE TABLE IF NOT EXISTS "captcha" (
+                id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                captcha    TEXT NOT NULL UNIQUE,
+                used       BOOLEAN DEFAULT FALSE
+        )`)
+
+	return
+}
+
+func addCaptcha(captcha string) error {
+
+	stmt, err := db.Prepare("INSERT INTO `captcha` " +
+		"(`captcha`) VALUES (?)")
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(captcha)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func useCaptcha(captcha string) error {
+
+	stmt, err := db.Prepare("UPDATE `captcha` " +
+		"SET used=? where captcha=?")
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(true, captcha)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func isCaptchaExists(captcha string) (exists bool) {
+
+	stmt, err := db.Prepare(
+		"SELECT EXISTS(SELECT `id` FROM `captcha` WHERE `captcha`=?)")
+	if err != nil {
+		return false
+	}
+
+	defer stmt.Close()
+
+	err = stmt.QueryRow(captcha).Scan(&exists)
+	if err != nil {
+		return false
+	}
+
+	return
+}
+
+func isCaptchaUsed(captcha string) (exists bool) {
+
+	stmt, err := db.Prepare(
+		"SELECT EXISTS(SELECT `id` FROM `captcha` WHERE `captcha`=? AND `used`=?)")
+	if err != nil {
+		return false
+	}
+
+	defer stmt.Close()
+
+	err = stmt.QueryRow(captcha, true).Scan(&exists)
+	if err != nil {
+		return false
+	}
+
+	return
+}
+
+func createSchema() error {
+
+	err := createCaptchaTable()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func openDatabase(path string) (err error) {
+
+	db, err = sql.Open("sqlite3", path)
+	if err != nil {
+		return
+	}
+
+	err = createSchema()
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +189,17 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if isCaptchaUsed(captcha) || !isCaptchaExists(captcha) {
+		http.Redirect(w, r, "/invalid_captcha.html", 307)
+		return
+	}
+
+	err = useCaptcha(captcha)
+	if err != nil {
+		http.Redirect(w, r, "/", 307)
+		return
+	}
+
 	ip := r.Header.Get("X-Forwarded-For")
 	if ip == "" {
 		ip = r.RemoteAddr
@@ -103,6 +229,7 @@ func captchaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//captcha, path, err := makeCaptcha(workdir, "/home/mikhail/dev/ibst.psu-ctf-iv-quals/common/signup/csource/")
 	captcha, path, err := makeCaptcha(workdir, "/home/website/csource/")
 	if err != nil {
 		log.Println("Error:", err)
@@ -127,12 +254,20 @@ func captchaHandler(w http.ResponseWriter, r *http.Request) {
 		ip = r.RemoteAddr
 	}
 
+	err = addCaptcha(captcha)
+	if err != nil {
+		log.Println("Error:", err)
+		return
+	}
+
 	log.Printf("Send captcha '%s' to %s", captcha, ip)
 }
 
 func main() {
 
-	//http.Handle("/", http.FileServer(http.Dir("/home/mikhail/dev/go/src/github.com/jollheef/ibst-psu-ctf-4-register/www/")))
+	openDatabase("/tmp/sqlite.db")
+
+	//http.Handle("/", http.FileServer(http.Dir("/home/mikhail/dev/ibst.psu-ctf-iv-quals/common/signup/www")))
 
 	http.HandleFunc("/auth.brainfuck", http.HandlerFunc(authHandler))
 	http.HandleFunc("/crackme", http.HandlerFunc(captchaHandler))

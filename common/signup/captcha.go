@@ -171,10 +171,10 @@ func makeCaptcha(workdir, csource string) (flag, path string, err error) {
 		return
 	}
 
-	_, _, err = system("strip", path)
-	if err != nil {
-		return
-	}
+	// _, _, err = system("strip", path)
+	// if err != nil {
+	// 	return
+	// }
 
 	return
 }
