@@ -31,13 +31,16 @@ namespace StellarChecker
                 IsConnected = false;
             }
 
-            SendData(CryptoServiceKeysRepository.PublicKeyString);
-            var task = Task.Run(() => ReadData());
-            
-            if (task.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
+            if (IsConnected)
             {
-                ClientId = task.Result;
-                _sessionKey = CryptoServiceKeysRepository.GetSessionKey(ClientId);
+                SendData(CryptoServiceKeysRepository.PublicKeyString);
+                var task = Task.Run(() => ReadData());
+
+                if (task.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
+                {
+                    ClientId = task.Result;
+                    _sessionKey = CryptoServiceKeysRepository.GetSessionKey(ClientId);
+                }
             }
         }
 
