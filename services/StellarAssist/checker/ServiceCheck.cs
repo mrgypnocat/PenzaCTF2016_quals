@@ -8,14 +8,14 @@ namespace StellarChecker
 {
     public enum CheckStates { Up, Down, Mumble, Corrupted }
 
-    public sealed class ServiceCheck
+    public class ServiceCheck
     {
         private const int WaitingResponseSeconds = 2;
         private readonly TcpClient _client;
         private readonly NetworkStream _networkStream;
         private readonly string _sessionKey;
-        public readonly string ClientId;
-        public readonly bool IsConnected = false;
+        private readonly string ClientId;
+        public bool IsConnected { get; protected set; }
 
         //waiting for WaitingResponseSeconds
         public ServiceCheck(string clientIpAddr, int clientPort)
@@ -62,9 +62,15 @@ namespace StellarChecker
 
 
         //totally waiting for (2 x WaitingResponseSeconds) + constructor
-        public CheckStates PutFlag(string flag, out string result)
+        public virtual CheckStates PutFlag(string flag, out string result)
         {
             result = null;
+
+            if (!IsConnected)
+            {
+                return CheckStates.Down;
+            }
+
             var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("SetCode");
             SendData(commandStringPerformed);
 
@@ -93,9 +99,13 @@ namespace StellarChecker
         }
 
         //totally waiting for WaitingResponseSeconds + constructor
-        public CheckStates GetFlag(out string result)
+        public virtual CheckStates GetFlag(out string result)
         {
             result = null;
+            if (!IsConnected)
+            {
+                return CheckStates.Down;
+            }
             var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("GetData");
             SendData(commandStringPerformed);
 
@@ -109,8 +119,12 @@ namespace StellarChecker
         }
 
         //totally waiting for (2 x WaitingResponseSeconds) + constructor
-        public CheckStates Check()
+        public virtual CheckStates Check()
         {
+            if (!IsConnected)
+            {
+                return CheckStates.Down;
+            }
             //TODO
             /*
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
