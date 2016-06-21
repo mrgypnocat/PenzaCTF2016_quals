@@ -1,0 +1,10 @@
+*.sln
+*.userprefs
+*.suo
+*.config
+services/StellarAssist/StellarChecker/StellarChecker/obj/
+*.csproj
+*.pdb
+*.manifest
+*.cache
+services/StellarAssist/StellarAssist/StellarAssist/obj/

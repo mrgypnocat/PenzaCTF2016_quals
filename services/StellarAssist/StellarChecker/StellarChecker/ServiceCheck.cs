@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace StellarChecker
@@ -77,7 +78,7 @@ namespace StellarChecker
             var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("SetCode");
             SendData(commandStringPerformed);
 
-            var codeString = new CodeConstructor().GetCode(flag);
+            var codeString = CodeConstructor.GetCode(flag);
             var codePerformed = new CryptoPerformer(_sessionKey).Perform(codeString);
             SendData(codePerformed);
 
@@ -92,7 +93,7 @@ namespace StellarChecker
             var getCodeResultTask = Task.Run(() => ReadData());
             if (getCodeResultTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
             {
-                if (new CryptoPerformer(_sessionKey).Perform(getCodeResultTask.Result).Contains(new CryptoPerformer(_sessionKey).Perform(flag)))
+                if (new CryptoPerformer(_sessionKey).Perform(getCodeResultTask.Result).Contains(flag))
                 {
                     result = ClientId;
                     return CheckStates.Up;
@@ -129,12 +130,10 @@ namespace StellarChecker
                 return CheckStates.Down;
             }
             //TODO
-            /*
+            
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
             var rndStr = new string(Enumerable.Repeat(chars, 12).Select(s => s[random.Next(s.Length)]).ToArray());
-            */
-            const string rndStr = "I am Fucking Checker!";
 
             var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("SetData");
             SendData(commandStringPerformed);
@@ -146,7 +145,7 @@ namespace StellarChecker
             var getDataTask = Task.Run(() => ReadData());
             if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
             {
-                if (getDataTask.Result==performedRndStr)
+                if (getDataTask.Result == performedRndStr)
                 {
                     commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("GetResult");
                     SendData(commandStringPerformed);
@@ -169,7 +168,7 @@ namespace StellarChecker
                 }
                 message += Encoding.UTF8.GetString(data, 0, bytes);
             } while (_networkStream.DataAvailable);
-            return message;
+            return new Regex("\r\n").Replace(message, "");
         }
 
         private void SendData(string data)

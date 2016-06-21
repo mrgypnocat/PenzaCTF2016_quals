@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net.Sockets;
+using System.Text.RegularExpressions;
 
 namespace StellarChecker
 {
@@ -7,7 +7,18 @@ namespace StellarChecker
     {
         static void Main(string[] args)
         {
-            if (args.Length>3)
+            if ((args == null)||(args.Length==0))
+            {
+                args = new[]
+                {
+                    "chk",
+                    "172.16.40.152",
+                    "8080",
+                    "fucker="
+                };
+            }
+            
+            if (args.Length>=3)
             {
                 string command = args[0];
                 string ipAddr = args[1];
@@ -19,7 +30,7 @@ namespace StellarChecker
                 }
 
                 //if some state in args
-                if (args.Length > 4)
+                if (args.Length >= 4)
                 {
                     state = args[3];
                 }
@@ -47,7 +58,7 @@ namespace StellarChecker
                 switch (checkState)
                 {
                     case CheckStates.Up:
-                        PrintState(response);
+                        if (response != null) PrintState(response);
                         ReturnServiceIsUp();
                         break;
                     case CheckStates.Down:
@@ -106,3 +117,4 @@ namespace StellarChecker
         }
     }
 }
+

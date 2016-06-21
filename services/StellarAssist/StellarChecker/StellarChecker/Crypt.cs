@@ -9,8 +9,8 @@ namespace StellarChecker
 
         static CryptoServiceKeysRepository()
         {
-            PublicKeyString = "someTeamPublicKey";
-            PrivateKeyString = "someTeamPrivateKey";
+            PublicKeyString = "someCheckerKey";
+            PrivateKeyString = "someCheckerKey";
         }
 
         public static byte[] GetSessionKey(byte[] clientPublicKeyString)
