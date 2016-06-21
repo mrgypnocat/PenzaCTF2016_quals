@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,7 +26,7 @@ namespace StellarAssist
                     //at first server should recognize client
                     if (_clientId == null)
                     {
-                        _clientId = new Regex(@"\W").Replace(ReadData(),"");
+                        _clientId = ReadData();
                         sessionKey = CryptoServiceKeysRepository.GetSessionKey(_clientId);
                         Console.WriteLine("Client id: {0}", _clientId);
                         SendData(CryptoServiceKeysRepository.PublicKeyString);
@@ -57,16 +55,16 @@ namespace StellarAssist
                         if (commandText.ToUpper().Contains("SetData".ToUpper()))
                         {
                             var dataTextCrypted = ReadData();
-                            var dataTextEncrypted = cryptoPerformer.Perform(dataTextCrypted);
+                            var dataTextEncrypted = new CryptoPerformer(sessionKey).Perform(dataTextCrypted);
                             var result = client.WriteClientData(dataTextEncrypted);
-                            SendData(result);
+                            SendData(cryptoPerformer.Perform(result));
                         }
                         if (commandText.ToUpper().Contains("SetCode".ToUpper()))
                         {
                             var dataTextCrypted = ReadData();
-                            var dataTextEncrypted = cryptoPerformer.Perform(dataTextCrypted);
+                            var dataTextEncrypted = new CryptoPerformer(sessionKey).Perform(dataTextCrypted);
                             var result = client.WriteClientCode(dataTextEncrypted);
-                            SendData(result);
+                            SendData(cryptoPerformer.Perform(result));
                         }
                         
                         if (commandText.ToUpper().Contains("Exit".ToUpper()))
@@ -112,7 +110,7 @@ namespace StellarAssist
                 }
                 message += Encoding.UTF8.GetString(data, 0, bytes);
             } while (_clientStream.DataAvailable);
-            return message;
+            return new Regex("\r\n").Replace(message, "");
         }
     }
 }
