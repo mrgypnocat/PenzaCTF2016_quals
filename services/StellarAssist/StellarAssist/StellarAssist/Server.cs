@@ -25,6 +25,7 @@ namespace StellarAssist
 	        //if (SomeShitCodeGuy())
             if (true)
 	        {
+                Console.WriteLine("Rewrite me, baby!");
                 RunWorkingCycle();
 	        }
 	        else
@@ -62,7 +63,6 @@ namespace StellarAssist
 	    private void RunWorkingCycle()
         {
             TcpListener.Start();
-            Console.WriteLine("Don't fuck with Chuck!");
             while (true)
             {
                 var someClient = TcpListener.AcceptTcpClient();

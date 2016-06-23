@@ -15,112 +15,117 @@ namespace StellarAssist
         public const string ExecuteFileName = "code.exe";
         public const string DataFileName = "data.dat";
 
-        private string _sessionKey;
-        public string SessionKey
+        private string _cryptKey;
+        public string CryptKey
         {
             get
             {
-                if (_sessionKey==null)
-                {
-                    var filePath = Path.Combine(ClientFolder, KeySessionFileName);
-                    if (File.Exists(filePath))
-                    {
-                        _sessionKey = File.ReadAllText(filePath, Encoding.UTF8);
-                    }
-                    else
-                    {
-                        _sessionKey = CryptoServiceKeysRepository.GetSessionKey(ClientId);
-                        var writer = new StreamWriter(filePath, append: false, encoding: Encoding.UTF8);
-                        writer.Write(_sessionKey);
-                        writer.Flush();
-                        writer.Close();
-                    }
-                     
-                }
-                return _sessionKey;
+                _cryptKey=_cryptKey ?? CryptoKeys.PrivateKeyString;
+                return _cryptKey;
             }
             set
             {
-                _sessionKey = value;
-                var writer = new StreamWriter(Path.Combine(ClientFolder, KeySessionFileName), append: false, encoding: Encoding.UTF8);
-                writer.Write(_sessionKey);
-                writer.Flush();
-                writer.Close();
+                _cryptKey = value ?? CryptoKeys.PrivateKeyString;
+                using (var writer = new StreamWriter(Path.Combine(ClientFolder, KeySessionFileName), false, Encoding.UTF8))
+                {
+                    writer.WriteLine("key:{0}", _cryptKey);
+                }
             }
         }
 
         public Client(string clientId)
         {
-            _sessionKey = null;
-            ClientId = clientId;
+            ClientId = clientId.Length>11 ? clientId.Substring(1, 10) : clientId;
+            
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
             ClientFolder = ClientId != null ? Path.Combine(appDir, ClientId) : appDir;
+            
             if (!Directory.Exists(ClientFolder))
             {
                 Directory.CreateDirectory(ClientFolder);
+                CryptKey = null;
+            }
+            else
+            {
+                var filePath = Path.Combine(ClientFolder, KeySessionFileName);
+                using (var file = new StreamReader(filePath, Encoding.UTF8))
+                {
+                    var line = file.ReadLine();
+                    _cryptKey = line != null ? line.Trim(' ').Replace("key:", "") : null;
+                }
             }
         }
 
         public string WriteClientData(string data, bool crypted = true)
         {
             var filepath = Path.Combine(ClientFolder, DataFileName);
-            var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8);
-            if (crypted)
+            using (var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8))
             {
-                var performer = new CryptoPerformer(ClientId);
-                data = performer.Perform(data);
+                if (crypted)
+                {
+                    var performer = new CryptoPerformer(CryptKey);
+                    data = performer.Perform(data);
+                }
+                writer.Write(data);
+                writer.Flush();
             }
-            writer.Write(data);
-            writer.Flush();
-            writer.Close();
+            
             return data;
         }
 
         public string ReadClientData(bool crypted=true)
         {
             var filepath = Path.Combine(ClientFolder, DataFileName);
-            var reader = new StreamReader(filepath, Encoding.UTF8);
-            var result = reader.ReadToEnd();
-
-            if (crypted)
+            using (var reader = new StreamReader(filepath, Encoding.UTF8))
             {
-                var performer = new CryptoPerformer(ClientId);
-                result=performer.Perform(result);
+                var result = reader.ReadToEnd();
+                if (crypted)
+                {
+                    var performer = new CryptoPerformer(CryptKey);
+                    result = performer.Perform(result);
+                }
+                return result;
             }
-            reader.Close();
-            return result;
         }
 
         public string WriteClientCode(string data)
         {
             var filepath = Path.Combine(ClientFolder, SourceFileName);
-            
-            var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8);
-            writer.Write(data);
+            using (var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8))
+            {
+                writer.Write(data);
+            }
 
-            writer.Flush();
-            writer.Close();
-
-            var proc = new Process
+            using (var proc = new Process
+            {
+                StartInfo =
                 {
-                    StartInfo =
-                        {
-                            FileName = "gmcs",
-                            Arguments = filepath,
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true
-                        }
-                };
-            proc.Start();
-            var result = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit(1000);
-            return result;
+                    FileName = "gmcs",
+                    Arguments = filepath,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                }
+            })
+            {
+                try
+                {
+                    proc.Start();
+                    var result = proc.StandardOutput.ReadToEnd();
+                    proc.WaitForExit(1000);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return null;
+                }
+            }
         }
 
         public string ExecuteClientCode(int maxExecutingTime=2500)
         {
             var filepath = Path.Combine(ClientFolder, ExecuteFileName);
-            var proc = new Process
+            using (var proc = new Process
             {
                 StartInfo =
                 {
@@ -129,12 +134,22 @@ namespace StellarAssist
                     UseShellExecute = false,
                     RedirectStandardOutput = true
                 }
-            };
-            proc.Start();
-            var result = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit(maxExecutingTime);
-            WriteClientData(result);
-            return result;
+            })
+            {
+                try
+                {
+                    proc.Start();
+                    var result = proc.StandardOutput.ReadToEnd();
+                    proc.WaitForExit(maxExecutingTime);
+                    WriteClientData(result);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return null;
+                }
+            }
         }
     }
 }

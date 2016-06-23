@@ -11,8 +11,6 @@ namespace StellarChecker
             var random = new Random();
 
             var codePatternNamespace = new string(Enumerable.Repeat(chars, 10).Select(s => s[random.Next(s.Length)]).ToArray());
-            string codePatternMain = null;
-
 
             int rndInt=random.Next(1,20);
             //1

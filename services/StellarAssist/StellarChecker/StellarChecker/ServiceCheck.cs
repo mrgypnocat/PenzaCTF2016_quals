@@ -11,143 +11,174 @@ namespace StellarChecker
 
     public class ServiceCheck
     {
-        private const int WaitingResponseSeconds = 2;
-        private readonly TcpClient _client;
-        private readonly NetworkStream _networkStream;
-        private readonly string _sessionKey;
-        private readonly string ClientId;
-        public bool IsConnected { get; protected set; }
+        protected const int WaitingResponseSecondsTimeout = 2;
+        
+        protected readonly TcpClient Client;
+        protected readonly NetworkStream ClientNetworkStream;
 
-        //waiting for WaitingResponseSeconds
+        private string CommonKey { get; set; }
+        private string ClientId { get; set; }
+
+        public bool IsConnected { get; protected set; }
+        
         public ServiceCheck(string clientIpAddr, int clientPort)
         {
+            Client = new TcpClient();
             try
             {
-                _client = new TcpClient(clientIpAddr, clientPort);
-                _networkStream = _client.GetStream();
-                IsConnected = true;
+                var connection = Client.BeginConnect(clientIpAddr, clientPort, null, null);
+                if (connection.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
+                {
+                    ClientNetworkStream = Client.GetStream();
+                    IsConnected = true;
+                }
             }
             catch (Exception)
             {
                 IsConnected = false;
             }
-
-            if (IsConnected)
-            {
-                SendData(CryptoServiceKeysRepository.PublicKeyString);
-                var task = Task.Run(() => ReadData());
-
-                if (task.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
-                {
-                    ClientId = task.Result;
-                    _sessionKey = CryptoServiceKeysRepository.GetSessionKey(ClientId);
-                }
-            }
         }
 
         ~ServiceCheck()
         {
-            try
+            if (ClientNetworkStream != null)
             {
-                if (_networkStream != null)
-                {
-                    _networkStream.Close();
-                }
+                ClientNetworkStream.Close();
+            }
 
-                if (_client != null)
-                {
-                    _client.Close();
-                }
-            }
-            catch
+            if (Client != null)
             {
+                Client.Close();
             }
+        }        
+
+        //some SHITcode here and below cause the logic was fit in a totally hurry. I'm sorry.
+        private CheckStates SetNewSessionKey(KeysExchanger keyExchangerParams)
+        {
+            if (IsConnected)
+            {
+                SendData(String.Format("{0}:{1}:{2}", keyExchangerParams.Prime, keyExchangerParams.Base,
+                                 keyExchangerParams.PublicKey));
+                
+                var getPublicKeyTask = Task.Factory.StartNew( () => ReadData() );
+                if (getPublicKeyTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
+                {
+                    ClientId = getPublicKeyTask.Result;
+                    CommonKey = keyExchangerParams.GetSessionKeyString(ClientId);
+                    return CheckStates.Up;
+                }
+                return CheckStates.Mumble;
+            }
+            return CheckStates.Down;
         }
 
-
-        //totally waiting for (2 x WaitingResponseSeconds) + constructor
         public virtual CheckStates PutFlag(string flag, out string result)
         {
             result = null;
-
             if (!IsConnected)
             {
                 return CheckStates.Down;
             }
 
-            var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("SetCode");
+            var exchanger = new KeysExchanger();
+            var keyState = SetNewSessionKey(exchanger);
+            if (keyState!=CheckStates.Up)
+            {
+                return keyState;
+            }
+            result = KeysExchanger.PackParamsSecret(exchanger);
+
+            var commandStringPerformed = new CryptoPerformer(CommonKey).Perform("SetCode");
             SendData(commandStringPerformed);
 
             var codeString = CodeConstructor.GetCode(flag);
-            var codePerformed = new CryptoPerformer(_sessionKey).Perform(codeString);
+            var codePerformed = new CryptoPerformer(CommonKey).Perform(codeString);
             SendData(codePerformed);
 
-            var getCompilationResultTask = Task.Run(() => ReadData());
-            if (!getCompilationResultTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds))){
+            var getCompilationResultTask = Task.Factory.StartNew(() => ReadData());
+            if (!getCompilationResultTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout))){
                 return CheckStates.Mumble;
             }
 
-            commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("GetResult");
+            commandStringPerformed = new CryptoPerformer(CommonKey).Perform("GetResult");
             SendData(commandStringPerformed);
 
-            var getCodeResultTask = Task.Run(() => ReadData());
-            if (getCodeResultTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
+            var getCodeResultTask = Task.Factory.StartNew(() => ReadData());
+            if (getCodeResultTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
             {
-                if (new CryptoPerformer(_sessionKey).Perform(getCodeResultTask.Result).Contains(flag))
+                if (new CryptoPerformer(CommonKey).Perform(getCodeResultTask.Result).Contains(flag))
                 {
-                    result = ClientId;
                     return CheckStates.Up;
                 }
             }
             return CheckStates.Mumble;
         }
-
-        //totally waiting for WaitingResponseSeconds + constructor
-        public virtual CheckStates GetFlag(out string result)
+        
+        public virtual CheckStates GetFlag(string state, out string result)
         {
             result = null;
             if (!IsConnected)
             {
                 return CheckStates.Down;
             }
-            var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("GetData");
+
+            KeysExchanger exchanger;
+            try
+            {
+                exchanger = KeysExchanger.UnpackParams(state);
+            }
+            catch (Exception)
+            {
+                throw new Exception(String.Format("can not parse state {0}", state));
+            }
+
+            var keyState = SetNewSessionKey(exchanger);
+            if (keyState != CheckStates.Up)
+            {
+                return keyState;
+            }
+
+            var commandStringPerformed = new CryptoPerformer(CommonKey).Perform("GetData");
             SendData(commandStringPerformed);
 
-            var getDataTask = Task.Run(() => ReadData());
-            if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
+            var getDataTask = Task.Factory.StartNew(() => ReadData());
+            if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
             {
-                result = new CryptoPerformer(_sessionKey).Perform(getDataTask.Result);
+                result = new CryptoPerformer(CommonKey).Perform(getDataTask.Result);
                 return CheckStates.Up;
             }
             return CheckStates.Mumble;
         }
 
-        //totally waiting for (2 x WaitingResponseSeconds) + constructor
         public virtual CheckStates Check()
         {
             if (!IsConnected)
             {
                 return CheckStates.Down;
             }
-            //TODO
             
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            var random = new Random();
-            var rndStr = new string(Enumerable.Repeat(chars, 12).Select(s => s[random.Next(s.Length)]).ToArray());
+            var keyState = SetNewSessionKey(new KeysExchanger());
+            if (keyState != CheckStates.Up)
+            {
+                return keyState;
+            }
 
-            var commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("SetData");
+            var commandStringPerformed = new CryptoPerformer(CommonKey).Perform("SetData");
             SendData(commandStringPerformed);
 
-            var performedRndStr = new CryptoPerformer(_sessionKey).Perform(rndStr);
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var rndStr = new string(Enumerable.Repeat(chars, random.Next(5, 51)).Select(s => s[random.Next(s.Length)]).ToArray());
+            
+            var performedRndStr = new CryptoPerformer(CommonKey).Perform(rndStr);
             SendData(performedRndStr);
 
-
-            var getDataTask = Task.Run(() => ReadData());
-            if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSeconds)))
+            var getDataTask = Task.Factory.StartNew(() => ReadData());
+            if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
             {
                 if (getDataTask.Result == performedRndStr)
                 {
-                    commandStringPerformed = new CryptoPerformer(_sessionKey).Perform("GetResult");
+                    commandStringPerformed = new CryptoPerformer(CommonKey).Perform("GetResult");
                     SendData(commandStringPerformed);
                     return CheckStates.Up;
                 }
@@ -161,20 +192,20 @@ namespace StellarChecker
             do
             {
                 var data = new byte[buffSize];
-                var bytes = _networkStream.Read(data, 0, data.Length);
+                var bytes = ClientNetworkStream.Read(data, 0, data.Length);
                 if (bytes == 0)
                 {
-                    throw new Exception();
+                    throw new Exception("end of receiving");
                 }
                 message += Encoding.UTF8.GetString(data, 0, bytes);
-            } while (_networkStream.DataAvailable);
+            } while (ClientNetworkStream.DataAvailable);
             return new Regex("\r\n").Replace(message, "");
         }
 
         private void SendData(string data)
         {
             var dataBytes = Encoding.UTF8.GetBytes(data + "\r\n");
-            _networkStream.Write(dataBytes, 0, dataBytes.Length);
+            ClientNetworkStream.Write(dataBytes, 0, dataBytes.Length);
         }
     }
 }

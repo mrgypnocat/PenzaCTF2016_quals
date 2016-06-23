@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Net;
 using System.Threading;
+using ForeignLibs;
 
 namespace StellarAssist
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            int MaxThreadsCount = Environment.ProcessorCount * 4;
-            ThreadPool.SetMaxThreads(MaxThreadsCount, MaxThreadsCount);
+            int maxThreadsCount = Environment.ProcessorCount * 8;
+            ThreadPool.SetMaxThreads(maxThreadsCount, maxThreadsCount);
             ThreadPool.SetMinThreads(2, 2);
-            var srv = new Server(IPAddress.Any, 8080);
+            new Server(IPAddress.Any, 8080);
         }
     }
 }
