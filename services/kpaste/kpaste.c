@@ -78,29 +78,57 @@ struct kpaste_work
         struct socket *sock;
 };
 
+#define GET_ROOT "GET / HTTP/1.1"
+
+#define HTTP_200 "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\n\n"
+
+#define HTML_ROOT "<!DOCTYPE html>                                 \
+<html lang=\"en\">                                                 \
+  <head>                                                           \
+    <meta charset=\"utf-8\">                                       \
+    <title>kpaste!</title>                                         \
+  </head>                                                          \
+  <body>                                                           \
+    <h1>kpaste!</h1>                                               \
+  </body>                                                          \
+</html>                                                            \
+"
+
 static int kpaste_interaction(void *work)
 {
+        int ret = -ENOMEM;
+
         struct kpaste_work *kw = (typeof(kw))work;
-
-        TRACE("kw: %p kw->sock: %p", kw, kw->sock);
-
-        kpaste_send(kw->sock, "Hello!\n", sizeof("Hello!\n"));
 
         const int buf_len = 1024;
         char* buf = kmalloc(buf_len, GFP_KERNEL);
-        TRACE("kpaste_recv: %d", kpaste_recv(kw->sock, buf, buf_len, HZ*10, HZ/10));
-        TRACE("recv: %s", buf);
+        if (!buf)
+                goto release;
 
-        kfree(buf);
+        ret = kpaste_recv(kw->sock, buf, buf_len, HZ*10, HZ/10);
+        if (IS_ERR_VALUE(ret))
+                goto free_buf;
+
+        if (!strncmp(buf, GET_ROOT, sizeof(GET_ROOT)-1)) {
+                ret = kpaste_send(kw->sock, HTTP_200, sizeof(HTTP_200));
+                if (IS_ERR_VALUE(ret))
+                        goto free_buf;
+
+                ret = kpaste_send(kw->sock, HTML_ROOT, sizeof(HTML_ROOT));
+                if (IS_ERR_VALUE(ret))
+                        goto free_buf;
+        }
+
+        TRACE("recv: %s", buf);
 
         kw->sock->ops->shutdown(kw->sock, SHUT_RDWR);
 
-        TRACE("");
-
+free_buf:
+        kfree(buf);
+release:
         sock_release(kw->sock);
         kfree(work);
-
-        return 0;
+        return ret;
 }
 
 static int kpaste_accept(void)
