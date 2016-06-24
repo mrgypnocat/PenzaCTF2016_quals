@@ -6,6 +6,7 @@
 #include <linux/sched.h>
 #include <linux/list.h>
 #include <linux/kthread.h>
+#include <asm/ioctls.h>
 
 #include <net/sock.h>
 #include <net/tcp.h>
@@ -37,14 +38,39 @@ static int kpaste_send(struct socket *sock, char *buf, int len)
         return kernel_sendmsg(sock, &msg, &kv, 1, len);
 }
 
-static int kpaste_recv(struct socket *sock, char *buf, int len)
+static int kpaste_recv_nonblock(struct socket *sock, char *buf, int len)
 {
         struct kvec kv = { .iov_base = buf, .iov_len = len };
         struct msghdr msg = { 0 };
 
         iov_iter_kvec(&msg.msg_iter, READ | ITER_KVEC, &kv, 1, len);
 
-        return kernel_recvmsg(sock, &msg, &kv, 1, len, msg.msg_flags);
+        int ret = kernel_recvmsg(sock, &msg, &kv, 1, len,
+                                 MSG_DONTWAIT | MSG_NOSIGNAL);
+        if (IS_ERR_VALUE(ret))
+                return ret;
+
+        if (ret < len)
+                buf[ret] = '\0';
+
+        return ret;
+}
+
+static int kpaste_recv(struct socket *sock, char *buf, int len,
+                       int timeout, int sleep) /* HZ */
+{
+        int ret = -EAGAIN;
+
+        while (-EAGAIN == ret && timeout > 0) {
+                ret = kpaste_recv_nonblock(sock, buf, len);
+
+                set_current_state(TASK_INTERRUPTIBLE);
+                schedule_timeout(sleep);
+                timeout -= sleep;
+                set_current_state(TASK_RUNNING);
+        }
+
+        return ret;
 }
 
 struct kpaste_work
@@ -62,7 +88,7 @@ static int kpaste_interaction(void *work)
 
         const int buf_len = 1024;
         char* buf = kmalloc(buf_len, GFP_KERNEL);
-        TRACE("kpaste_recv: %d", kpaste_recv(kw->sock, buf, buf_len));
+        TRACE("kpaste_recv: %d", kpaste_recv(kw->sock, buf, buf_len, HZ*10, HZ/10));
         TRACE("recv: %s", buf);
 
         kfree(buf);
