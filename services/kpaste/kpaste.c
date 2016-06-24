@@ -71,6 +71,7 @@ static int kpaste_interaction(void *work)
 
         TRACE("");
 
+        sock_release(kw->sock);
         kfree(work);
 
         return 0;
@@ -83,13 +84,13 @@ static int kpaste_accept(void)
         int ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP, &client_sock);
         if (IS_ERR_VALUE(ret)) {
                 TRACE("sock_create: %d", ret);
-                goto exit;
+                goto release;
         }
 
         ret = kpaste_service.sock->ops->accept(kpaste_service.sock,
                                                client_sock, O_NONBLOCK);
         if (IS_ERR_VALUE(ret))
-                goto exit;
+                goto release;
 
         TRACE("success accept");
 
@@ -97,12 +98,16 @@ static int kpaste_accept(void)
         if (!kw) {
                 TRACE("enomem");
                 ret = -ENOMEM;
-                goto exit;
+                goto release;
         }
 
         kw->sock = client_sock;
 
         kthread_run(kpaste_interaction, kw, "kpaste_interaction");
+        goto exit;
+
+release:
+        sock_release(client_sock);
 exit:
         return ret;
 }
