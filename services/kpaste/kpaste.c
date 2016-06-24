@@ -49,11 +49,10 @@ static int kpaste_recv(struct socket *sock, char *buf, int len)
 
 struct kpaste_work
 {
-        struct work_struct work;
         struct socket *sock;
 };
 
-static void kpaste_interaction(struct work_struct *work)
+static int kpaste_interaction(void *work)
 {
         struct kpaste_work *kw = (typeof(kw))work;
 
@@ -63,7 +62,7 @@ static void kpaste_interaction(struct work_struct *work)
 
         const int buf_len = 1024;
         char* buf = kmalloc(buf_len, GFP_KERNEL);
-        TRACE("kpaste_recv: %ld", kpaste_recv(kw->sock, buf, buf_len));
+        TRACE("kpaste_recv: %d", kpaste_recv(kw->sock, buf, buf_len));
         TRACE("recv: %s", buf);
 
         kfree(buf);
@@ -73,6 +72,8 @@ static void kpaste_interaction(struct work_struct *work)
         TRACE("");
 
         kfree(work);
+
+        return 0;
 }
 
 static int kpaste_accept(void)
@@ -99,11 +100,9 @@ static int kpaste_accept(void)
                 goto exit;
         }
 
-        INIT_WORK((struct work_struct*)kw, kpaste_interaction);
-
         kw->sock = client_sock;
 
-        queue_work(wq, (struct work_struct *)kw);
+        kthread_run(kpaste_interaction, kw, "kpaste_interaction");
 exit:
         return ret;
 }
