@@ -6,30 +6,19 @@ namespace StellarChecker
     {
         static void Main(string[] args)
         {
-            /*
-            var client = new KeysExchanger();
-            var server = new KeysExchanger(client.Prime, client.Base);
-
-            var cSession = client.GetSessionKey(server.PublicKey);
-            var sSession = server.GetSessionKey(client.PublicKey);
-            return;
-            */
-
             if ((args == null)||(args.Length==0))
             {
                 args = new[]
                 {
-                    "chk",
-                    //"192.168.1.37",
-                    "127.0.0.1",
+                    //"get",
+                    "put",
+                    "172.16.40.152",
                     "8080",
-                    "fucker="
+                    "flag="
+                    //"2PASDT4YLYEMV:2XYCWXSWS8YTD:3PCWCZA931YFP"
                 };
             }
-while (true)
-{
-                
-            
+
             if (args.Length>=3)
             {
                 string command = args[0];
@@ -67,21 +56,21 @@ while (true)
                             checkState = checker.Check();
                             break;
                         default:
-                            ReturnCheckerError();
                             Console.Error.WriteLine("unknown command {0}", command);
+                            ReturnCheckerError();
                             break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.Error.WriteLine(ex.Message);
                     ReturnCheckerError();
                 }
                 
                 switch (checkState)
                 {
                     case CheckStates.Up:
-                        if (response != null) PrintState(response);
+                        PrintState(response);
                         ReturnServiceIsUp();
                         break;
                     case CheckStates.Down:
@@ -101,7 +90,7 @@ while (true)
                 Console.Error.WriteLine("few arguments");
                 ReturnCheckerError();
             }
-}
+
         }
 
         public static void PrintState(string response)
@@ -109,10 +98,6 @@ while (true)
             if (response!=null)
             {
                 Console.WriteLine(response);
-            }
-            else
-            {
-                ReturnServiceIsMumble();
             }
         }
 

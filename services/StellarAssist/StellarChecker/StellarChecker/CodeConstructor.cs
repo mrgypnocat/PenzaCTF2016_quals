@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace StellarChecker
 {
@@ -10,7 +11,9 @@ namespace StellarChecker
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
 
-            var codePatternNamespace = new string(Enumerable.Repeat(chars, 10).Select(s => s[random.Next(s.Length)]).ToArray());
+            var codePatternNamespace =
+                new Regex(@"\d").Replace(
+                    new string(Enumerable.Repeat(chars, 20).Select(s => s[random.Next(s.Length)]).ToArray()), "");
 
             int rndInt=random.Next(1,20);
             //1
@@ -22,6 +25,7 @@ namespace StellarChecker
             string pattern3 = "Console.WriteLine(\"" + flag.Aggregate<char, string>(null, (current, t) => current + (char) ( t + rndInt )) +
                 "\".Aggregate<char, string>(null, (current, t) => current + (char) (t - " + rndInt + ")));";
             
+            /*
             //4
             var rndStr = new string(Enumerable.Repeat(chars, flag.Length).Select(s => s[random.Next(s.Length)]).ToArray());
             string patternStr = null;
@@ -36,8 +40,8 @@ namespace StellarChecker
                               "someStr += (char) ( \"" + patternStr + "\"[i] - \""+rndStr+"\"[i] );" +
                               "}" +
                               "Console.WriteLine(someStr);";
-
-            var patterns = new[] {pattern1, pattern2, pattern3, pattern4};
+            */
+            var patterns = new[] {pattern1, pattern2, pattern3};
 
             var codePatternFull = @"
             using System;

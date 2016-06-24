@@ -22,8 +22,8 @@ namespace StellarAssist
             TcpListener = new TcpListener(LocalIpAddress, localPort);
             TcpClientParams=new TcpClient();
             //TODO
-	        //if (SomeShitCodeGuy())
-            if (true)
+	        if (SomeShitCodeGuy())
+            //if (true)
 	        {
                 Console.WriteLine("Rewrite me, baby!");
                 RunWorkingCycle();

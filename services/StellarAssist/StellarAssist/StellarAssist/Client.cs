@@ -61,15 +61,10 @@ namespace StellarAssist
             var filepath = Path.Combine(ClientFolder, DataFileName);
             using (var writer = new StreamWriter(path: filepath, append: false, encoding: Encoding.UTF8))
             {
-                if (crypted)
-                {
-                    var performer = new CryptoPerformer(CryptKey);
-                    data = performer.Perform(data);
-                }
-                writer.Write(data);
+                string performed = crypted ? new CryptoPerformer(CryptKey).Perform(data) : data;
+                writer.Write(performed);
                 writer.Flush();
             }
-            
             return data;
         }
 

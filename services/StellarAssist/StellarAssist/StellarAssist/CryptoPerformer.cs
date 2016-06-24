@@ -7,16 +7,28 @@ namespace StellarAssist
 {
     public class CryptoPerformer
     {
-        public readonly byte[] Key;
+        private DelayLine<byte> _delayLine;
+        protected byte[] Filling;
 
-        public CryptoPerformer(string key, int blockSize = 64)
+        public CryptoPerformer(string key)
+            : this(Encoding.UTF8.GetBytes(key))
         {
-            Key = Encoding.UTF8.GetBytes(key);
         }
 
-        public CryptoPerformer(byte[] key, int blockSize = 64)
+        public CryptoPerformer(byte[] key)
         {
-            Key = key;
+            /*
+            Filling = new int[key.Length];
+            for (int i = 0; i < key.Length; i++)
+            {
+                Filling[i] = Convert.ToInt32(key[i]);
+            }
+             */
+            _delayLine = new DelayLine<byte>(
+                removalPointIndexes: new[] { 21, 13, 5, 2, 1, 0 },
+                filling: key,
+                action: ( (op1, op2) => (byte) ( op1 ^ op2 ) )
+                );
         }
 
         public string Perform(string block)
@@ -28,7 +40,13 @@ namespace StellarAssist
         public byte[] Perform(byte[] block)
         {
             //TODO:
-            return block;
+            var length = block.Length;
+            var result = new byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = (byte)(block[i] ^ _delayLine.GetCount());
+            }
+            return result;
         }
 
         public static int[] GeneratePrimesNaive(int n)

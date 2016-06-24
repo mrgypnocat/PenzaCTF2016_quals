@@ -23,7 +23,7 @@ namespace StellarChecker
         
         public ServiceCheck(string clientIpAddr, int clientPort)
         {
-            Client = new TcpClient();
+            Client = new TcpClient {SendTimeout = 1};
             try
             {
                 var connection = Client.BeginConnect(clientIpAddr, clientPort, null, null);
@@ -176,7 +176,8 @@ namespace StellarChecker
             var getDataTask = Task.Factory.StartNew(() => ReadData());
             if (getDataTask.Wait(TimeSpan.FromSeconds(WaitingResponseSecondsTimeout)))
             {
-                if (getDataTask.Result == performedRndStr)
+                var res = new CryptoPerformer(CommonKey).Perform(getDataTask.Result);
+                if (res.Contains(rndStr))
                 {
                     commandStringPerformed = new CryptoPerformer(CommonKey).Perform("GetResult");
                     SendData(commandStringPerformed);
