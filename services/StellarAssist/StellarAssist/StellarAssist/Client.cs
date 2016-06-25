@@ -95,7 +95,7 @@ namespace StellarAssist
             {
                 StartInfo =
                 {
-                    FileName = "gmcs",
+                    FileName = "mcs",
                     Arguments = filepath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true
@@ -107,6 +107,7 @@ namespace StellarAssist
                     proc.Start();
                     var result = proc.StandardOutput.ReadToEnd();
                     proc.WaitForExit(1000);
+                    File.Delete(filepath);
                     return result;
                 }
                 catch (Exception ex)

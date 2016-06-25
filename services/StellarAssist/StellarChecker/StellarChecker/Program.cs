@@ -12,7 +12,7 @@ namespace StellarChecker
                 {
                     //"get",
                     "put",
-                    "172.16.40.152",
+                    "10.1.0.3",
                     "8080",
                     "flag="
                     //"2PASDT4YLYEMV:2XYCWXSWS8YTD:3PCWCZA931YFP"
