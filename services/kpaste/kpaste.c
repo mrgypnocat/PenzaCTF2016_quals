@@ -333,7 +333,7 @@ static int kpaste_interaction(void *work)
 
                         cookie[strnlen(cookie, PATH_MAX)-1] = '\0';
 
-                        TRACE("cookie: '%s'", cookie);
+                        TRACE(cookie);
 
                         user = radix_tree_lookup(
                                 &users,
