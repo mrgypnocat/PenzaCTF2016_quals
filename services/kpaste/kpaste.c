@@ -13,13 +13,15 @@
 #include <net/sock.h>
 #include <net/tcp.h>
 
-
+#ifdef DEBUG
 #define TRACE(fmt, arg...)					\
 	printk("%s:%d:%s:%s " fmt "\n",				\
 	       (strrchr(__FILE__, '/') ?			\
 		strrchr(__FILE__, '/') + 1 : __FILE__),		\
 	       __LINE__, __FUNCTION__, current->comm, ##arg)
-
+#else
+#define TRACE(fmt, arg...)
+#endif
 
 #define KPASTE_PORT 393
 
