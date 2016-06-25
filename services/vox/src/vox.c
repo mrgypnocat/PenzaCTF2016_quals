@@ -472,7 +472,7 @@ int main (int argc, char** argv)
                 }
 
                 char *cmd = malloc(strlen(login) + strlen(password) + 0xFF);
-                sprintf(cmd, "gzip %s:%s/vox.wav", login, password);
+                sprintf(cmd, "gzip '%s:%s/vox.wav'", login, password);
 
                 system(cmd);
 

@@ -152,5 +152,5 @@ func handler(conn net.Conn) {
 }
 
 func main() {
-	tcpServer(":50006", time.Millisecond)
+	tcpServer(":4040", time.Millisecond)
 }
