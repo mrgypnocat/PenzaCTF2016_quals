@@ -15,7 +15,7 @@ namespace StellarChecker
                     "10.1.0.3",
                     "8080",
                     "flag="
-                    //"2PASDT4YLYEMV:2XYCWXSWS8YTD:3PCWCZA931YFP"
+                    //"3T8XUBG5IHHUV:2UZOLHOGOOENH:25LC09EQY2XM7"
                 };
             }
 

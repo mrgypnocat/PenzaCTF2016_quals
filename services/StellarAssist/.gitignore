@@ -1,0 +1,13 @@
+StellarChecker/StellarChecker/obj/
+StellarChecker/StellarChecker/bin/
+StellarChecker/StellarChecker/Properties/
+
+
+StellarAssist/StellarAssist/obj/
+StellarAssist/StellarAssist/bin/
+StellarAssist/StellarAssist/Properties/
+*.sln
+*.suo
+*.userprefs
+*.config
+*.csproj
